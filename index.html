@@ -198,6 +198,20 @@ select option{background:#0d1e38;color:var(--text);}
 .pulse{animation:pulse 1.2s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 @media(max-width:400px){.header-text h1{font-size:1.7rem;}.form-row{flex-wrap:wrap;}input[type="date"]{flex:1 0 100%;}}
+/* FAB SCANNER */
+.fab-scanner{position:fixed;bottom:74px;right:20px;width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--blue-core),#1a6fd4);border:none;color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 24px rgba(59,158,255,0.4),0 0 0 1px rgba(59,158,255,0.25);display:flex;align-items:center;justify-content:center;z-index:100;transition:all 0.2s;}
+.fab-scanner:active{transform:scale(0.93);box-shadow:0 2px 12px rgba(59,158,255,0.3);}
+/* LOCATION TOGGLE (scanner modal) */
+.scan-location-toggle{display:flex;gap:8px;margin-bottom:4px;}
+.loc-btn{flex:1;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);color:var(--text-dim);font-family:var(--font);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.loc-btn.active{background:linear-gradient(135deg,rgba(59,158,255,0.2),rgba(0,229,255,0.1));border-color:rgba(59,158,255,0.4);color:var(--text);}
+/* SCAN ACTION BUTTONS */
+.scan-btns{display:flex;gap:8px;}
+.btn-scan-add{flex:1;padding:13px 10px;background:linear-gradient(135deg,var(--blue-core),#1a6fd4);color:#fff;border:none;border-radius:var(--radius-sm);font-family:var(--font);font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 20px rgba(59,158,255,0.25);}
+.btn-scan-continue{flex:1;padding:13px 10px;background:linear-gradient(135deg,rgba(0,214,143,0.12),rgba(0,229,255,0.08));color:var(--ok);border:1px solid rgba(0,214,143,0.35);border-radius:var(--radius-sm);font-family:var(--font);font-size:0.82rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+/* MOVE ITEM BUTTON */
+.btn-move{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:99px;width:30px;height:30px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-faint);transition:all 0.2s;flex-shrink:0;}
+.btn-move:hover{background:rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.3);color:var(--cyan);}
 </style>
 </head>
 <body>
@@ -248,8 +262,7 @@ select option{background:#0d1e38;color:var(--text);}
   </header>
 
   <div class="quick-add-row">
-    <button class="btn-quick btn-barcode" onclick="openBarcode()">▦ &nbsp;Scanner</button>
-    <button class="btn-quick btn-menu"    onclick="openMenu()">✦ &nbsp;Proposer des menus</button>
+    <button class="btn-quick btn-menu" onclick="openMenu()">✦ &nbsp;Proposer des menus</button>
   </div>
 
   <div class="tabs">
@@ -288,6 +301,8 @@ select option{background:#0d1e38;color:var(--text);}
 
   <div class="list" id="list"></div>
 
+  <button class="fab-scanner" onclick="openBarcode()" title="Scanner un code-barres">▦</button>
+
   <div class="floating-bar">
     <span class="lbl">Total</span> <strong id="bar-total">0</strong>
     <span id="bar-warn" style="display:none"><span class="dot"></span><strong id="bar-warn-count">0</strong> <span class="lbl">expire bientôt</span></span>
@@ -305,6 +320,10 @@ select option{background:#0d1e38;color:var(--text);}
     <div class="camera-hint">Pointez vers le code-barres — détection automatique</div>
     <div class="scan-indicator" id="scan-indicator">Démarrage…</div>
     <div id="scan-result-form" style="display:none;margin-top:16px;flex-direction:column;gap:10px;">
+      <div class="scan-location-toggle">
+        <button class="loc-btn active" data-loc="freezer" onclick="setScanLocation('freezer')">❄️ Congélateur</button>
+        <button class="loc-btn" data-loc="fridge" onclick="setScanLocation('fridge')">🧊 Frigo</button>
+      </div>
       <div class="form-row">
         <input type="text"   id="scan-name" placeholder="Nom du produit">
         <input type="number" id="scan-qty"  value="1" min="1" max="99">
@@ -319,7 +338,10 @@ select option{background:#0d1e38;color:var(--text);}
         </select>
         <input type="date" id="scan-exp" title="Date d'expiration">
       </div>
-      <button class="btn-save" onclick="addFromScan()">Ajouter au stock ＋</button>
+      <div class="scan-btns">
+        <button class="btn-scan-add" onclick="addFromScan()">Ajouter ＋</button>
+        <button class="btn-scan-continue" onclick="addFromScanAndContinue()">Ajouter &amp; continuer ↩</button>
+      </div>
     </div>
   </div>
 </div>
@@ -421,6 +443,7 @@ let barcodeStream   = null;
 let barcodeReader   = null;
 let scannerRunning  = false;
 let lastScannedCode = null;
+let scanLocation    = 'freezer';
 
 let menuDays  = '1';
 let menuDiet  = 'aucune contrainte';
@@ -568,7 +591,13 @@ async function addItem() {
   const qty = parseInt(document.getElementById('inp-qty').value) || 1;
   const cat = document.getElementById('inp-cat').value;
   const exp = document.getElementById('inp-exp').value || null;
-  const { error } = await sbClient.from('stock').insert({ name, qty, cat, exp, location: currentTab, added: Date.now() });
+  const existing = appData[currentTab].find(i => i.name.toLowerCase() === name.toLowerCase());
+  let error;
+  if (existing) {
+    ({ error } = await sbClient.from('stock').update({ qty: existing.qty + qty }).eq('id', existing.id));
+  } else {
+    ({ error } = await sbClient.from('stock').insert({ name, qty, cat, exp, location: currentTab, added: Date.now() }));
+  }
   if (error) { showToast('Erreur : ' + error.message); return; }
   ['inp-name','inp-exp'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('inp-qty').value = 1;
@@ -581,9 +610,37 @@ async function addFromScan() {
   const qty = parseInt(document.getElementById('scan-qty').value) || 1;
   const cat = document.getElementById('scan-cat').value;
   const exp = document.getElementById('scan-exp').value || null;
-  const { error } = await sbClient.from('stock').insert({ name, qty, cat, exp, location: currentTab, added: Date.now() });
+  const existing = appData[scanLocation].find(i => i.name.toLowerCase() === name.toLowerCase());
+  let error;
+  if (existing) {
+    ({ error } = await sbClient.from('stock').update({ qty: existing.qty + qty }).eq('id', existing.id));
+  } else {
+    ({ error } = await sbClient.from('stock').insert({ name, qty, cat, exp, location: scanLocation, added: Date.now() }));
+  }
   if (error) { showToast('Erreur : ' + error.message); return; }
   closeBarcode();
+}
+async function addFromScanAndContinue() {
+  const name = document.getElementById('scan-name').value.trim();
+  if (!name) { document.getElementById('scan-name').focus(); return; }
+  const qty = parseInt(document.getElementById('scan-qty').value) || 1;
+  const cat = document.getElementById('scan-cat').value;
+  const exp = document.getElementById('scan-exp').value || null;
+  const existing = appData[scanLocation].find(i => i.name.toLowerCase() === name.toLowerCase());
+  let error;
+  if (existing) {
+    ({ error } = await sbClient.from('stock').update({ qty: existing.qty + qty }).eq('id', existing.id));
+  } else {
+    ({ error } = await sbClient.from('stock').insert({ name, qty, cat, exp, location: scanLocation, added: Date.now() }));
+  }
+  if (error) { showToast('Erreur : ' + error.message); return; }
+  showToast('Ajouté ✓');
+  document.getElementById('scan-result-form').style.display = 'none';
+  const ind = document.getElementById('scan-indicator');
+  ind.className = 'scan-indicator loading';
+  ind.innerHTML = '<span class="pulse">●</span>&nbsp;Cherche un code-barres…';
+  lastScannedCode = null;
+  startDecoding(document.getElementById('camera-view'));
 }
 async function changeQty(id, delta) {
   const list = appData[currentTab];
@@ -595,6 +652,17 @@ async function changeQty(id, delta) {
 }
 async function deleteItem(id) {
   await sbClient.from('stock').delete().eq('id', id);
+}
+async function moveItem(id) {
+  const inFridge = !!appData.fridge.find(i => i.id === id);
+  const to = inFridge ? 'freezer' : 'fridge';
+  const { error } = await sbClient.from('stock').update({ location: to }).eq('id', id);
+  if (error) { showToast('Erreur : ' + error.message); return; }
+  showToast('Déplacé vers ' + (to === 'fridge' ? '🧊 Frigo' : '❄️ Congél.') + ' ✓');
+}
+function setScanLocation(loc) {
+  scanLocation = loc;
+  document.querySelectorAll('.loc-btn').forEach(b => b.classList.toggle('active', b.dataset.loc === loc));
 }
 
 // ── IMPORT / EXPORT ────────────────────────────────────
@@ -713,10 +781,13 @@ function render() {
 function itemHTML(i) {
   const s  = i.exp ? expiryStatus(i.exp) : 'none';
   const sc = s === 'none' ? 'no-expiry' : 'status-' + s;
+  const moveTo    = currentTab === 'fridge' ? '❄️' : '🧊';
+  const moveTitle = currentTab === 'fridge' ? 'Déplacer au congélateur' : 'Déplacer au frigo';
   return '<div class="item ' + sc + '">'
     + '<div class="item-info"><div class="item-name">' + esc(i.name) + '</div>'
     + '<div class="item-sub">' + (i.cat ? '<span class="cat-tag">' + esc(i.cat) + '</span>' : '')
     + '<span class="item-expiry">' + (expiryLabel(i.exp) || '—') + '</span></div></div>'
+    + '<button class="btn-move" onclick="moveItem(\'' + i.id + '\')" title="' + moveTitle + '">' + moveTo + '</button>'
     + '<div class="qty-control">'
     + '<button class="qty-btn" onclick="changeQty(\'' + i.id + '\',-1)">−</button>'
     + '<span class="qty-val">' + i.qty + '</span>'
@@ -736,6 +807,8 @@ function switchTab(tab) {
 
 // ── BARCODE ────────────────────────────────────────────
 async function openBarcode() {
+  scanLocation = 'freezer';
+  document.querySelectorAll('.loc-btn').forEach(b => b.classList.toggle('active', b.dataset.loc === 'freezer'));
   document.getElementById('modal-barcode').classList.add('open');
   document.getElementById('scan-result-form').style.display = 'none';
   const ind = document.getElementById('scan-indicator');
