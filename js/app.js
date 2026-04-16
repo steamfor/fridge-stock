@@ -61,6 +61,7 @@ document.getElementById('list').addEventListener('touchend', () => {
 
 ['inp-cat', 'scan-cat', 'edit-cat'].forEach(id => buildCategorySelect(id));
 updateNotifButton();
+updateThemeButton();
 
 // ─── Service Worker ───────────────────────────
 

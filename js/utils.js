@@ -57,6 +57,26 @@ function buildCategorySelect(id) {
     + CATEGORIES.map(c => `<option>${c}</option>`).join('');
 }
 
+// ─── Thème clair / sombre ─────────────────────
+
+function toggleTheme() {
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const next = isLight ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = next === 'light' ? '#f0f5ff' : '#0b1628';
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  const btn = document.getElementById('btn-theme');
+  if (!btn) return;
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  btn.textContent = isLight ? '🌙' : '☀️';
+  btn.title = isLight ? 'Passer en thème sombre' : 'Passer en thème clair';
+}
+
 // ─── Raccourcis date ──────────────────────────
 
 function setDateShortcut(inputId, days) {
