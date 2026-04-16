@@ -5,11 +5,16 @@
 // ─── Chargement ───────────────────────────────
 
 async function loadStock() {
+  // Skeleton uniquement au premier chargement (données vides)
+  if (!appData.fridge.length && !appData.freezer.length) showSkeleton();
+
   const { data, error } = await sbClient.from('stock').select('*').order('added', { ascending: true });
   if (error) { showToast('Erreur : ' + error.message); return; }
+
   appData.fridge  = (data || []).filter(r => r.location === 'fridge').map(dbToItem);
   appData.freezer = (data || []).filter(r => r.location === 'freezer').map(dbToItem);
   render();
+  checkExpiryNotifications(); // Notifier si produits expirent bientôt
 }
 
 function dbToItem(r) {
@@ -70,7 +75,6 @@ async function addFromScanAndContinue() {
   if (error) { showToast('Erreur : ' + error.message); return; }
 
   showToast('Ajouté ✓');
-  // Réinitialiser le formulaire et relancer le scanner
   document.getElementById('scan-result-form').style.display = 'none';
   const ind = document.getElementById('scan-indicator');
   ind.className = 'scan-indicator loading';
@@ -100,32 +104,48 @@ async function _upsertItem({ name, qty, cat, exp, location }) {
   return error;
 }
 
-// ─── Modification de quantité ─────────────────
+// ─── Optimistic updates ───────────────────────
+// L'UI se met à jour immédiatement ; rollback via loadStock() si erreur Supabase
 
 async function changeQty(id, delta) {
   const item = appData[currentTab].find(i => i.id === id);
   if (!item) return;
   const newQty = item.qty + delta;
-  if (newQty <= 0) {
-    await sbClient.from('stock').delete().eq('id', id);
-  } else {
-    await sbClient.from('stock').update({ qty: newQty }).eq('id', id);
-  }
-}
 
-// ─── Suppression ──────────────────────────────
+  if (newQty <= 0) {
+    appData[currentTab] = appData[currentTab].filter(i => i.id !== id);
+  } else {
+    item.qty = newQty;
+  }
+  render();
+
+  const { error } = newQty <= 0
+    ? await sbClient.from('stock').delete().eq('id', id)
+    : await sbClient.from('stock').update({ qty: newQty }).eq('id', id);
+  if (error) { showToast('Erreur : ' + error.message); loadStock(); }
+}
 
 async function deleteItem(id) {
-  await sbClient.from('stock').delete().eq('id', id);
-}
+  appData.fridge  = appData.fridge.filter(i => i.id !== id);
+  appData.freezer = appData.freezer.filter(i => i.id !== id);
+  render();
 
-// ─── Déplacement frigo ↔ congélateur ─────────
+  const { error } = await sbClient.from('stock').delete().eq('id', id);
+  if (error) { showToast('Erreur : ' + error.message); loadStock(); }
+}
 
 async function moveItem(id) {
   const inFridge = !!appData.fridge.find(i => i.id === id);
-  const to = inFridge ? 'freezer' : 'fridge';
+  const from = inFridge ? 'fridge'  : 'freezer';
+  const to   = inFridge ? 'freezer' : 'fridge';
+
+  const item = appData[from].find(i => i.id === id);
+  appData[from] = appData[from].filter(i => i.id !== id);
+  appData[to].push(item);
+  render();
+
   const { error } = await sbClient.from('stock').update({ location: to }).eq('id', id);
-  if (error) { showToast('Erreur : ' + error.message); return; }
+  if (error) { showToast('Erreur : ' + error.message); loadStock(); return; }
   showToast('Déplacé vers ' + (to === 'fridge' ? '🧊 Frigo' : '❄️ Congél.') + ' ✓');
 }
 
@@ -158,15 +178,12 @@ async function importData() {
       try {
         const imported = JSON.parse(ev.target.result);
         if (!imported.fridge && !imported.freezer) throw new Error('Format invalide');
-
         await sbClient.from('stock').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
         const rows = [
           ...(imported.fridge  || []).map(i => ({ name: i.name, qty: i.qty, cat: i.cat || '', exp: i.exp || null, location: 'fridge',  added: i.added || Date.now() })),
           ...(imported.freezer || []).map(i => ({ name: i.name, qty: i.qty, cat: i.cat || '', exp: i.exp || null, location: 'freezer', added: i.added || Date.now() })),
         ];
         if (rows.length) await sbClient.from('stock').insert(rows);
-
         closeSettings();
         showToast('Données importées ✓');
       } catch (err) {

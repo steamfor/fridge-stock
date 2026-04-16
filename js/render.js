@@ -30,6 +30,23 @@ function sortItems(items) {
   });
 }
 
+// ─── Skeleton (chargement initial) ───────────
+
+function showSkeleton() {
+  const listEl = document.getElementById('list');
+  if (!listEl) return;
+  listEl.innerHTML = [1, 2, 3, 4].map(() => `
+    <div class="item-skeleton">
+      <div style="flex:1;min-width:0">
+        <div class="skeleton-line" style="width:55%;height:14px;margin-bottom:8px;"></div>
+        <div class="skeleton-line" style="width:30%;height:10px;margin-bottom:0;"></div>
+      </div>
+      <div class="skeleton-line" style="width:90px;height:32px;border-radius:99px;margin:0;flex-shrink:0;"></div>
+    </div>`).join('');
+}
+
+// ─── Rendu principal ──────────────────────────
+
 function render() {
   const listEl = document.getElementById('list');
   if (!listEl) return;
@@ -43,7 +60,7 @@ function render() {
   }
   items = sortItems(items);
 
-  // Mise à jour des compteurs
+  // Compteurs des onglets
   document.getElementById('count-fridge').textContent  = appData.fridge.length;
   document.getElementById('count-freezer').textContent = appData.freezer.length;
 
@@ -91,20 +108,26 @@ function itemHTML(item) {
   const moveTitle = currentTab === 'fridge' ? 'Déplacer au congélateur' : 'Déplacer au frigo';
 
   return `
-    <div class="item ${statusCls}">
-      <div class="item-info">
-        <div class="item-name">${esc(item.name)}</div>
-        <div class="item-sub">
-          ${item.cat ? `<span class="cat-tag">${esc(item.cat)}</span>` : ''}
-          <span class="item-expiry">${expiryLabel(item.exp) || '—'}</span>
+    <div class="item-wrapper" data-id="${item.id}">
+      <div class="swipe-delete-bg" onclick="deleteItem('${item.id}')">🗑</div>
+      <div class="item ${statusCls}">
+        <div class="item-info" onclick="openEdit('${item.id}')">
+          <div class="item-name">${esc(item.name)}</div>
+          <div class="item-sub">
+            ${item.cat ? `<span class="cat-tag">${esc(item.cat)}</span>` : ''}
+            <span class="item-expiry">${expiryLabel(item.exp) || '—'}</span>
+          </div>
         </div>
-      </div>
-      <button class="btn-move" onclick="moveItem('${item.id}')" title="${moveTitle}">${moveTo}</button>
-      <div class="qty-control">
-        <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
-        <span class="qty-val">${item.qty}</span>
-        <button class="qty-btn" onclick="changeQty('${item.id}',+1)">＋</button>
-        <button class="qty-btn delete" onclick="deleteItem('${item.id}')">✕</button>
+        <button class="btn-move" onclick="moveItem('${item.id}')" title="${moveTitle}">${moveTo}</button>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${item.id}',+1)">＋</button>
+          <button class="qty-btn delete" onclick="deleteItem('${item.id}')">✕</button>
+        </div>
       </div>
     </div>`;
 }
+
+// Recherche avec debounce (150 ms)
+const debouncedRender = debounce(render, 150);
