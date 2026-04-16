@@ -9,9 +9,10 @@ const CATEGORY_MAP = [
   { keywords: ['fromage', 'cheese'],             cat: '🧀 Fromage'       },
   { keywords: ['légume', 'vegetable'],           cat: '🥦 Légumes'       },
   { keywords: ['fruit'],                         cat: '🍎 Fruits'        },
-  { keywords: ['boisson', 'beverage'],           cat: '🧃 Boissons'      },
-  { keywords: ['pain', 'bread'],                 cat: '🍞 Boulangerie'   },
-  { keywords: ['oeuf', 'egg'],                   cat: '🍳 Œufs'         },
+  { keywords: ['boisson', 'beverage'],                    cat: '🧃 Boissons'      },
+  { keywords: ['pain', 'bread'],                          cat: '🍞 Boulangerie'   },
+  { keywords: ['oeuf', 'egg'],                            cat: '🍳 Œufs'         },
+  { keywords: ['féculent', 'pâtes', 'riz', 'semoule', 'céréale', 'pasta'], cat: '🍚 Féculents'    },
 ];
 
 function guessCategoryFromTags(categoriesStr) {

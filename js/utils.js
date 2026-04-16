@@ -41,6 +41,36 @@ function esc(s) {
 
 // ─── Expiration ────────────────────────────────
 
+// ─── Debounce ──────────────────────────────────
+
+function debounce(fn, delay) {
+  let timer;
+  return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
+}
+
+// ─── Sélects de catégories ────────────────────
+
+function buildCategorySelect(id) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  select.innerHTML = '<option value="">Catégorie…</option>'
+    + CATEGORIES.map(c => `<option>${c}</option>`).join('');
+}
+
+// ─── Raccourcis date ──────────────────────────
+
+function setDateShortcut(inputId, days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  document.getElementById(inputId).value = d.toISOString().slice(0, 10);
+}
+
+function clearDateInput(inputId) {
+  document.getElementById(inputId).value = '';
+}
+
+// ─── Expiration ────────────────────────────────
+
 function expiryStatus(d) {
   if (!d) return 'none';
   const today = new Date();
