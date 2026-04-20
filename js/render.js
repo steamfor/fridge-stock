@@ -63,6 +63,7 @@ function render() {
   // Compteurs des onglets
   document.getElementById('count-fridge').textContent  = appData.fridge.length;
   document.getElementById('count-freezer').textContent = appData.freezer.length;
+  document.getElementById('count-pantry').textContent  = appData.pantry.length;
 
   // Barre flottante
   const total = appData[currentTab].reduce((s, i) => s + i.qty, 0);
@@ -78,7 +79,8 @@ function render() {
 
   // État vide
   if (!items.length) {
-    const icon = currentTab === 'fridge' ? '🧊' : '❄️';
+    const icons = { fridge: '🧊', freezer: '❄️', pantry: '🫙' };
+    const icon = icons[currentTab] || '📦';
     const msg  = query ? 'Aucun résultat.' : 'Rien ici pour l\'instant.<br>Ajoutez vos premiers produits !';
     listEl.innerHTML = `<div class="empty-state"><span class="icon">${icon}</span>${msg}</div>`;
     return;
@@ -104,8 +106,12 @@ function render() {
 function itemHTML(item) {
   const status    = item.exp ? expiryStatus(item.exp) : 'none';
   const statusCls = status === 'none' ? 'no-expiry' : 'status-' + status;
-  const moveTo    = currentTab === 'fridge' ? '❄️' : '🧊';
-  const moveTitle = currentTab === 'fridge' ? 'Déplacer au congélateur' : 'Déplacer au frigo';
+  const _locs      = ['fridge', 'freezer', 'pantry'];
+  const _nextLoc   = _locs[(_locs.indexOf(currentTab) + 1) % 3];
+  const _moveEmoji = { fridge: '🧊', freezer: '❄️', pantry: '🫙' };
+  const _moveLabel = { fridge: 'Frigo', freezer: 'Congélateur', pantry: 'Placard' };
+  const moveTo     = _moveEmoji[_nextLoc];
+  const moveTitle  = 'Déplacer vers ' + _moveLabel[_nextLoc];
 
   return `
     <div class="item-wrapper" data-id="${item.id}">

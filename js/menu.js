@@ -30,7 +30,7 @@ function toggleChip(btn) {
 // ─── Résumé du stock pour le prompt ──────────
 
 function buildStockSummary() {
-  const all = [...appData.fridge, ...appData.freezer];
+  const all = [...appData.fridge, ...appData.freezer, ...appData.pantry];
   if (!all.length) return null;
 
   const urgent = all.filter(i => ['warn', 'expired'].includes(expiryStatus(i.exp)));
@@ -67,7 +67,7 @@ function renderMenuDays(days, el) {
 // ─── Génération via Mistral ───────────────────
 
 async function generateMenus() {
-  const all = [...appData.fridge, ...appData.freezer];
+  const all = [...appData.fridge, ...appData.freezer, ...appData.pantry];
   const resultEl  = document.getElementById('menu-result');
   const contentEl = document.getElementById('menu-result-content');
 

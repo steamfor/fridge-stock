@@ -6,13 +6,14 @@
 
 async function loadStock() {
   // Skeleton uniquement au premier chargement (données vides)
-  if (!appData.fridge.length && !appData.freezer.length) showSkeleton();
+  if (!appData.fridge.length && !appData.freezer.length && !appData.pantry.length) showSkeleton();
 
   const { data, error } = await sbClient.from('stock').select('*').order('added', { ascending: true });
   if (error) { showToast('Erreur : ' + error.message); return; }
 
   appData.fridge  = (data || []).filter(r => r.location === 'fridge').map(dbToItem);
   appData.freezer = (data || []).filter(r => r.location === 'freezer').map(dbToItem);
+  appData.pantry  = (data || []).filter(r => r.location === 'pantry').map(dbToItem);
   render();
   checkExpiryNotifications(); // Notifier si produits expirent bientôt
 }
@@ -128,6 +129,7 @@ async function changeQty(id, delta) {
 async function deleteItem(id) {
   appData.fridge  = appData.fridge.filter(i => i.id !== id);
   appData.freezer = appData.freezer.filter(i => i.id !== id);
+  appData.pantry  = appData.pantry.filter(i => i.id !== id);
   render();
 
   const { error } = await sbClient.from('stock').delete().eq('id', id);
@@ -135,9 +137,9 @@ async function deleteItem(id) {
 }
 
 async function moveItem(id) {
-  const inFridge = !!appData.fridge.find(i => i.id === id);
-  const from = inFridge ? 'fridge'  : 'freezer';
-  const to   = inFridge ? 'freezer' : 'fridge';
+  const locs = ['fridge', 'freezer', 'pantry'];
+  const from = locs.find(loc => appData[loc].find(i => i.id === id));
+  const to   = locs[(locs.indexOf(from) + 1) % 3];
 
   const item = appData[from].find(i => i.id === id);
   appData[from] = appData[from].filter(i => i.id !== id);
@@ -146,7 +148,8 @@ async function moveItem(id) {
 
   const { error } = await sbClient.from('stock').update({ location: to }).eq('id', id);
   if (error) { showToast('Erreur : ' + error.message); loadStock(); return; }
-  showToast('Déplacé vers ' + (to === 'fridge' ? '🧊 Frigo' : '❄️ Congél.') + ' ✓');
+  const labels = { fridge: '🧊 Frigo', freezer: '❄️ Congél.', pantry: '🫙 Placard' };
+  showToast('Déplacé vers ' + labels[to] + ' ✓');
 }
 
 // ─── Location scanner ─────────────────────────
@@ -177,11 +180,12 @@ async function importData() {
     reader.onload = async (ev) => {
       try {
         const imported = JSON.parse(ev.target.result);
-        if (!imported.fridge && !imported.freezer) throw new Error('Format invalide');
+        if (!imported.fridge && !imported.freezer && !imported.pantry) throw new Error('Format invalide');
         await sbClient.from('stock').delete().neq('id', '00000000-0000-0000-0000-000000000000');
         const rows = [
           ...(imported.fridge  || []).map(i => ({ name: i.name, qty: i.qty, cat: i.cat || '', exp: i.exp || null, location: 'fridge',  added: i.added || Date.now() })),
           ...(imported.freezer || []).map(i => ({ name: i.name, qty: i.qty, cat: i.cat || '', exp: i.exp || null, location: 'freezer', added: i.added || Date.now() })),
+          ...(imported.pantry  || []).map(i => ({ name: i.name, qty: i.qty, cat: i.cat || '', exp: i.exp || null, location: 'pantry',  added: i.added || Date.now() })),
         ];
         if (rows.length) await sbClient.from('stock').insert(rows);
         closeSettings();
