@@ -12,7 +12,7 @@ let currentTab  = 'freezer'; // Congélateur par défaut
 let currentSort = 'name';
 
 // Données stock (chargées depuis Supabase)
-let appData = { fridge: [], freezer: [] };
+let appData = { fridge: [], freezer: [], pantry: [] };
 
 // Édition
 let editingId = null;

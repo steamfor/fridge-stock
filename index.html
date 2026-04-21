@@ -6,10 +6,10 @@
 <title>FridgeStock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b1628">
 <script>if(localStorage.getItem('theme')==='light')document.documentElement.setAttribute('data-theme','light');</script>
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/app.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -69,6 +69,7 @@
   <div class="tabs">
     <button class="tab"        data-tab="fridge"  onclick="switchTab('fridge')">🧊 Frigo <span class="count" id="count-fridge">0</span></button>
     <button class="tab active" data-tab="freezer" onclick="switchTab('freezer')">❄️ Congél. <span class="count" id="count-freezer">0</span></button>
+    <button class="tab"        data-tab="pantry"  onclick="switchTab('pantry')">🫙 Placard <span class="count" id="count-pantry">0</span></button>
   </div>
 
   <div class="add-form">
@@ -124,6 +125,7 @@
       <div class="scan-location-toggle">
         <button class="loc-btn active" data-loc="freezer" onclick="setScanLocation('freezer')">❄️ Congélateur</button>
         <button class="loc-btn"        data-loc="fridge"  onclick="setScanLocation('fridge')">🧊 Frigo</button>
+        <button class="loc-btn"        data-loc="pantry"  onclick="setScanLocation('pantry')">🫙 Placard</button>
       </div>
       <div class="form-row">
         <input type="text"   id="scan-name" placeholder="Nom du produit">

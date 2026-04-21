@@ -20,7 +20,7 @@ function checkExpiryNotifications(force = false) {
   const key = 'notif-last-' + new Date().toISOString().slice(0, 10);
   if (!force && localStorage.getItem(key)) return;
 
-  const allItems = [...appData.fridge, ...appData.freezer];
+  const allItems = [...appData.fridge, ...appData.freezer, ...appData.pantry];
   const expiring = allItems.filter(i => ['warn', 'expired'].includes(expiryStatus(i.exp)));
   if (!expiring.length) return;
 
