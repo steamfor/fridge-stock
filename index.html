@@ -268,12 +268,16 @@
         <button class="receipt-loc-btn loc-btn"        data-loc="fridge"  onclick="setReceiptLocation('fridge')">🧊 Frigo</button>
         <button class="receipt-loc-btn loc-btn"        data-loc="pantry"  onclick="setReceiptLocation('pantry')">🫙 Placard</button>
       </div>
+      <div style="display:flex;gap:8px;">
+        <button class="receipt-input-btn" onclick="receiptImportPdf()">📎 &nbsp;Importer PDF</button>
+        <button class="receipt-input-btn" onclick="receiptScanPhoto()">📷 &nbsp;Scanner photo</button>
+      </div>
       <div>
-        <div class="menu-option-label" style="margin-bottom:8px;">Collez le texte de votre ticket</div>
-        <textarea id="receipt-text" class="receipt-textarea" rows="6"
+        <div class="menu-option-label" style="margin-bottom:8px;">ou collez le texte du ticket</div>
+        <textarea id="receipt-text" class="receipt-textarea" rows="5"
           placeholder="Copiez-collez ici le texte de votre ticket de caisse…"></textarea>
       </div>
-      <button class="btn-parse" id="btn-receipt-parse" onclick="parseReceipt()">🔍 Analyser le ticket</button>
+      <button class="btn-parse" id="btn-receipt-parse" onclick="parseReceipt()">🔍 Analyser le texte</button>
       <div id="receipt-preview-section" style="display:none;">
         <div class="menu-option-label" style="margin-bottom:8px;">Produits détectés — modifiez si besoin</div>
         <div class="receipt-items" id="receipt-preview"></div>

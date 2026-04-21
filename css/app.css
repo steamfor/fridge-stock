@@ -395,3 +395,6 @@ input.receipt-item-name { flex: 1; min-width: 0; padding: 9px 12px; font-size: 0
 input.receipt-item-qty  { flex: 0 0 58px; padding: 9px 8px; font-size: 0.83rem; text-align: center; }
 .receipt-item-del { width: 34px; height: 34px; flex-shrink: 0; background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.2); border-radius: var(--radius-sm); color: var(--expired); cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .receipt-item-del:hover { background: rgba(255,77,109,0.18); border-color: rgba(255,77,109,0.4); }
+
+.receipt-input-btn { flex: 1; padding: 11px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-dim); font-family: var(--font); font-size: 0.83rem; font-weight: 600; cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.receipt-input-btn:hover { background: var(--bg-card-hv); border-color: var(--border-hv); color: var(--text); }

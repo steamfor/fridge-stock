@@ -12,11 +12,11 @@ function openReceipt() {
   document.querySelectorAll('.receipt-loc-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.loc === 'freezer')
   );
-  document.getElementById('receipt-text').value = '';
+  document.getElementById('receipt-text').value        = '';
   document.getElementById('receipt-preview-section').style.display = 'none';
   const parseBtn = document.getElementById('btn-receipt-parse');
   parseBtn.disabled    = false;
-  parseBtn.textContent = '🔍 Analyser le ticket';
+  parseBtn.textContent = '🔍 Analyser le texte';
 }
 
 function closeReceipt() {
@@ -34,7 +34,128 @@ function setReceiptLocation(loc) {
   );
 }
 
-// ─── Parsing via Mistral ──────────────────────
+// ─── Import PDF ───────────────────────────────
+
+function receiptImportPdf() {
+  const input = document.createElement('input');
+  input.type   = 'file';
+  input.accept = '.pdf,application/pdf';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const parseBtn = document.getElementById('btn-receipt-parse');
+    parseBtn.disabled    = true;
+    parseBtn.textContent = 'Lecture du PDF…';
+    try {
+      const text = await _extractPdfText(file);
+      document.getElementById('receipt-text').value = text;
+      showToast('PDF chargé ✓');
+    } catch (err) {
+      showToast('Erreur PDF : ' + err.message);
+    }
+    parseBtn.disabled    = false;
+    parseBtn.textContent = '🔍 Analyser le texte';
+  };
+  input.click();
+}
+
+async function _extractPdfText(file) {
+  await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page    = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+// ─── Photo / OCR ──────────────────────────────
+
+function receiptScanPhoto() {
+  if (!mistralKey) { showToast('Clé Mistral non configurée.'); return; }
+  const input = document.createElement('input');
+  input.type   = 'file';
+  input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await _ocrReceiptImage(file);
+  };
+  input.click();
+}
+
+async function _ocrReceiptImage(file) {
+  const parseBtn = document.getElementById('btn-receipt-parse');
+  parseBtn.disabled    = true;
+  parseBtn.textContent = 'Lecture de l\'image…';
+
+  try {
+    const base64   = await _fileToBase64(file);
+    const mimeType = file.type || 'image/jpeg';
+
+    const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + mistralKey,
+      },
+      body: JSON.stringify({
+        model: 'pixtral-12b-2409',
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Extrait les articles alimentaires de ce ticket de caisse.
+
+Réponds UNIQUEMENT avec ce JSON valide (sans markdown):
+{"items":[{"name":"Nom du produit","qty":1}]}
+
+Règles:
+- Produits alimentaires uniquement (pas sacs, cartes, etc.)
+- Ignore totaux, taxes, remises, codes articles
+- qty = quantité entière ≥ 1 (défaut 1)
+- Noms lisibles, sans codes internes`,
+            },
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mimeType};base64,${base64}` },
+            },
+          ],
+        }],
+        temperature: 0.1,
+        max_tokens:  2000,
+      }),
+    });
+
+    const j = await r.json();
+    if (!r.ok) throw new Error(j?.message || r.statusText);
+
+    const raw  = (j.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();
+    const json = raw.match(/\{[\s\S]*\}/)?.[0];
+    if (!json) throw new Error('Réponse inattendue');
+
+    _parsedReceiptItems = (JSON.parse(json).items || [])
+      .map(i => ({ name: String(i.name || '').trim(), qty: Math.max(1, parseInt(i.qty) || 1) }))
+      .filter(i => i.name);
+
+    document.getElementById('receipt-preview-section').style.display = '';
+    renderReceiptPreview();
+  } catch (err) {
+    showToast('Erreur OCR : ' + err.message);
+  }
+
+  parseBtn.disabled    = false;
+  parseBtn.textContent = '🔍 Analyser le texte';
+}
+
+// ─── Parsing texte via Mistral ────────────────
 
 async function parseReceipt() {
   const text = document.getElementById('receipt-text').value.trim();
@@ -86,7 +207,7 @@ Règles strictes:
   } catch (err) {
     showToast('Erreur : ' + err.message);
     btn.disabled    = false;
-    btn.textContent = '🔍 Analyser le ticket';
+    btn.textContent = '🔍 Analyser le texte';
     return;
   }
 
@@ -103,7 +224,7 @@ function renderReceiptPreview() {
   section.style.display = '';
 
   if (!_parsedReceiptItems.length) {
-    preview.innerHTML     = '<div style="color:var(--text-faint);font-size:0.83rem;padding:8px 0;">Aucun produit trouvé.</div>';
+    preview.innerHTML        = '<div style="color:var(--text-faint);font-size:0.83rem;padding:8px 0;">Aucun produit trouvé.</div>';
     confirmBtn.style.display = 'none';
     return;
   }
@@ -151,4 +272,26 @@ async function confirmReceiptImport() {
     switchTab(receiptLocation);
     closeReceipt();
   }
+}
+
+// ─── Utilitaires ──────────────────────────────
+
+function _fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function _loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s    = document.createElement('script');
+    s.src      = src;
+    s.onload   = resolve;
+    s.onerror  = () => reject(new Error('Impossible de charger ' + src));
+    document.head.appendChild(s);
+  });
 }
