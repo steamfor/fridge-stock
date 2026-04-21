@@ -105,6 +105,14 @@ function guessCategoryFromTags(p) {
   return '';
 }
 
+function guessCategoryFromName(name) {
+  const text = name.toLowerCase();
+  for (const { keywords = [], cat } of CATEGORY_MAP) {
+    if (keywords.some(k => text.includes(k))) return cat;
+  }
+  return '';
+}
+
 // ─── Ouverture / fermeture ────────────────────
 
 async function openBarcode() {
