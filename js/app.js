@@ -11,7 +11,7 @@ function closeSettingsOnBg(e) { if (e.target === document.getElementById('modal-
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter'  && document.activeElement?.id === 'inp-name')       addItem();
   if (e.key === 'Enter'  && document.activeElement?.id === 'login-password') doLogin();
-  if (e.key === 'Escape') { closeBarcode(); closeMenu(); closeSettings(); closeEdit(); closeMove(); }
+  if (e.key === 'Escape') { closeBarcode(); closeMenu(); closeSettings(); closeEdit(); closeMove(); closeReceipt(); }
 });
 
 // ─── Swipe-to-delete (délégation sur #list) ───
