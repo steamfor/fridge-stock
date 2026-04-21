@@ -391,8 +391,9 @@ select option { background: #0d1e38; color: var(--text); }
 
 .receipt-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; max-height: 260px; overflow-y: auto; }
 .receipt-item-row { display: flex; gap: 8px; align-items: center; }
-input.receipt-item-name { flex: 1; min-width: 0; padding: 9px 12px; font-size: 0.83rem; }
-input.receipt-item-qty  { flex: 0 0 58px; padding: 9px 8px; font-size: 0.83rem; text-align: center; }
+input.receipt-item-name  { flex: 1; min-width: 0; padding: 9px 12px; font-size: 0.83rem; }
+input.receipt-item-qty   { flex: 0 0 52px; padding: 9px 6px; font-size: 0.83rem; text-align: center; }
+select.receipt-item-cat  { flex: 0 0 130px; padding: 9px 8px; font-size: 0.75rem; }
 .receipt-item-del { width: 34px; height: 34px; flex-shrink: 0; background: rgba(255,77,109,0.08); border: 1px solid rgba(255,77,109,0.2); border-radius: var(--radius-sm); color: var(--expired); cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .receipt-item-del:hover { background: rgba(255,77,109,0.18); border-color: rgba(255,77,109,0.4); }
 

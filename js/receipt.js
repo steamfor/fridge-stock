@@ -115,13 +115,14 @@ async function _ocrReceiptImage(file) {
               text: `Extrait les articles alimentaires de ce ticket de caisse.
 
 Réponds UNIQUEMENT avec ce JSON valide (sans markdown):
-{"items":[{"name":"Nom du produit","qty":1}]}
+{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
 
 Règles:
 - Produits alimentaires uniquement (pas sacs, cartes, etc.)
 - Ignore totaux, taxes, remises, codes articles
 - qty = quantité entière ≥ 1 (défaut 1)
-- Noms lisibles, sans codes internes`,
+- Noms lisibles, sans codes internes
+- cat = une de ces catégories exactes : ${CATEGORIES.filter(c => c !== '📦 Autre').join(', ')} (ou "" si aucune)`,
             },
             {
               type: 'image_url',
@@ -142,7 +143,11 @@ Règles:
     if (!json) throw new Error('Réponse inattendue');
 
     _parsedReceiptItems = (JSON.parse(json).items || [])
-      .map(i => ({ name: String(i.name || '').trim(), qty: Math.max(1, parseInt(i.qty) || 1) }))
+      .map(i => {
+        const name = String(i.name || '').trim();
+        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
+        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
+      })
       .filter(i => i.name);
 
     document.getElementById('receipt-preview-section').style.display = '';
@@ -166,20 +171,22 @@ async function parseReceipt() {
   btn.disabled    = true;
   btn.textContent = 'Analyse en cours…';
 
+  const catList = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
   const prompt = `Extrait les articles alimentaires d'un ticket de caisse français.
 
 Ticket:
 ${text}
 
 Réponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication):
-{"items":[{"name":"Nom du produit","qty":1}]}
+{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
 
 Règles strictes:
 - Ne garde que les produits alimentaires (pas les sacs, emballages, cartes cadeaux, etc.)
 - Ignore les totaux, taxes, remises, codes articles, numéros
 - qty = quantité achetée (entier ≥ 1, défaut 1 si non précisé)
 - Simplifie et nettoie les noms (lisibles, sans codes internes)
-- Si le même produit apparaît plusieurs fois, somme les quantités`;
+- Si le même produit apparaît plusieurs fois, somme les quantités
+- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -201,7 +208,11 @@ Règles strictes:
 
     const raw = (j.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
     _parsedReceiptItems = (JSON.parse(raw).items || [])
-      .map(i => ({ name: String(i.name || '').trim(), qty: Math.max(1, parseInt(i.qty) || 1) }))
+      .map(i => {
+        const name = String(i.name || '').trim();
+        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
+        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
+      })
       .filter(i => i.name);
     renderReceiptPreview();
   } catch (err) {
@@ -236,6 +247,12 @@ function renderReceiptPreview() {
         placeholder="Nom du produit">
       <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
         onchange="_parsedReceiptItems[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
+      <select class="receipt-item-cat" onchange="_parsedReceiptItems[${i}].cat = this.value">
+        <option value="">📦 Autre</option>
+        ${CATEGORIES.filter(c => c !== '📦 Autre').map(c =>
+          `<option value="${c}"${item.cat === c ? ' selected' : ''}>${esc(c)}</option>`
+        ).join('')}
+      </select>
       <button class="receipt-item-del" onclick="_removeReceiptItem(${i})" title="Supprimer">✕</button>
     </div>`).join('');
 
@@ -259,7 +276,7 @@ async function confirmReceiptImport() {
 
   let errors = 0;
   for (const item of items) {
-    const err = await _upsertItem({ name: item.name, qty: item.qty, cat: '', exp: null, location: receiptLocation });
+    const err = await _upsertItem({ name: item.name, qty: item.qty, cat: item.cat || '', exp: null, location: receiptLocation });
     if (err) errors++;
   }
 
