@@ -2,6 +2,29 @@
 // IMPORT TICKET DE CAISSE (Mistral AI)
 // ─────────────────────────────────────────────
 
+// Clés ASCII envoyées à Mistral → labels affichés dans l'app
+const _CAT_KEYS = {
+  'viande':          '🥩 Viande',
+  'poisson':         '🐟 Poisson',
+  'laitier':         '🥛 Laitier',
+  'fromage':         '🧀 Fromage',
+  'legumes':         '🥦 Légumes',
+  'fruits':          '🍎 Fruits',
+  'oeufs':           '🍳 Œufs',
+  'boissons':        '🧃 Boissons',
+  'plat-prepare':    '🍱 Plat préparé',
+  'plats-cuisines':  '🍝 Plats cuisinés',
+  'feculents':       '🍚 Féculents',
+  'biscuits-snacks': '🍪 Biscuits & snacks',
+  'condiments':      '🫙 Condiments',
+  'boulangerie':     '🍞 Boulangerie',
+};
+const _CAT_KEYS_LIST = Object.keys(_CAT_KEYS).join(', ');
+
+function _resolveCategory(key, name) {
+  return _CAT_KEYS[key] || guessCategoryFromName(name) || '';
+}
+
 let receiptLocation     = 'freezer';
 let _parsedReceiptItems = [];
 
@@ -12,7 +35,7 @@ function openReceipt() {
   document.querySelectorAll('.receipt-loc-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.loc === 'freezer')
   );
-  document.getElementById('receipt-text').value        = '';
+  document.getElementById('receipt-text').value = '';
   document.getElementById('receipt-preview-section').style.display = 'none';
   const parseBtn = document.getElementById('btn-receipt-parse');
   parseBtn.disabled    = false;
@@ -115,14 +138,14 @@ async function _ocrReceiptImage(file) {
               text: `Extrait les articles alimentaires de ce ticket de caisse.
 
 Réponds UNIQUEMENT avec ce JSON valide (sans markdown):
-{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
+{"items":[{"name":"Nom du produit","qty":1,"cat":"plat-prepare"}]}
 
 Règles:
 - Produits alimentaires uniquement (pas sacs, cartes, etc.)
 - Ignore totaux, taxes, remises, codes articles
 - qty = quantité entière ≥ 1 (défaut 1)
 - Noms lisibles, sans codes internes
-- cat = une de ces catégories exactes : ${CATEGORIES.filter(c => c !== '📦 Autre').join(', ')} (ou "" si aucune)`,
+- cat = une de ces valeurs exactes : ${_CAT_KEYS_LIST} (ou "" si aucune)`,
             },
             {
               type: 'image_url',
@@ -145,8 +168,7 @@ Règles:
     _parsedReceiptItems = (JSON.parse(json).items || [])
       .map(i => {
         const name = String(i.name || '').trim();
-        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
-        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
+        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat: _resolveCategory(i.cat, name) };
       })
       .filter(i => i.name);
 
@@ -171,14 +193,13 @@ async function parseReceipt() {
   btn.disabled    = true;
   btn.textContent = 'Analyse en cours…';
 
-  const catList = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
   const prompt = `Extrait les articles alimentaires d'un ticket de caisse français.
 
 Ticket:
 ${text}
 
 Réponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication):
-{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
+{"items":[{"name":"Nom du produit","qty":1,"cat":"plat-prepare"}]}
 
 Règles strictes:
 - Ne garde que les produits alimentaires (pas les sacs, emballages, cartes cadeaux, etc.)
@@ -186,7 +207,7 @@ Règles strictes:
 - qty = quantité achetée (entier ≥ 1, défaut 1 si non précisé)
 - Simplifie et nettoie les noms (lisibles, sans codes internes)
 - Si le même produit apparaît plusieurs fois, somme les quantités
-- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
+- cat = une de ces valeurs exactes : ${_CAT_KEYS_LIST} (ou "" si aucune ne correspond)`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -210,8 +231,7 @@ Règles strictes:
     _parsedReceiptItems = (JSON.parse(raw).items || [])
       .map(i => {
         const name = String(i.name || '').trim();
-        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
-        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
+        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat: _resolveCategory(i.cat, name) };
       })
       .filter(i => i.name);
     renderReceiptPreview();
@@ -228,6 +248,14 @@ Règles strictes:
 
 // ─── Prévisualisation ─────────────────────────
 
+function _catOptions(selected) {
+  const opts = ['<option value="">📦 Autre</option>'];
+  for (const [, label] of Object.entries(_CAT_KEYS)) {
+    opts.push(`<option value="${label}"${selected === label ? ' selected' : ''}>${esc(label)}</option>`);
+  }
+  return opts.join('');
+}
+
 function renderReceiptPreview() {
   const section    = document.getElementById('receipt-preview-section');
   const preview    = document.getElementById('receipt-preview');
@@ -241,19 +269,20 @@ function renderReceiptPreview() {
   }
 
   preview.innerHTML = _parsedReceiptItems.map((item, i) => `
-    <div class="receipt-item-row">
-      <input type="text" class="receipt-item-name" value="${esc(item.name)}"
-        onchange="_parsedReceiptItems[${i}].name = this.value.trim()"
-        placeholder="Nom du produit">
-      <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
-        onchange="_parsedReceiptItems[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
-      <select class="receipt-item-cat" onchange="_parsedReceiptItems[${i}].cat = this.value">
-        <option value="">📦 Autre</option>
-        ${CATEGORIES.filter(c => c !== '📦 Autre').map(c =>
-          `<option value="${c}"${item.cat === c ? ' selected' : ''}>${esc(c)}</option>`
-        ).join('')}
-      </select>
-      <button class="receipt-item-del" onclick="_removeReceiptItem(${i})" title="Supprimer">✕</button>
+    <div class="receipt-item-card">
+      <div class="receipt-item-top">
+        <input type="text" class="receipt-item-name" value="${esc(item.name)}"
+          onchange="_parsedReceiptItems[${i}].name = this.value.trim()"
+          placeholder="Nom du produit">
+        <button class="receipt-item-del" onclick="_removeReceiptItem(${i})" title="Supprimer">✕</button>
+      </div>
+      <div class="receipt-item-bottom">
+        <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
+          onchange="_parsedReceiptItems[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
+        <select class="receipt-item-cat" onchange="_parsedReceiptItems[${i}].cat = this.value">
+          ${_catOptions(item.cat)}
+        </select>
+      </div>
     </div>`).join('');
 
   confirmBtn.style.display = '';
