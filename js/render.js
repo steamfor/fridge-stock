@@ -106,12 +106,7 @@ function render() {
 function itemHTML(item) {
   const status    = item.exp ? expiryStatus(item.exp) : 'none';
   const statusCls = status === 'none' ? 'no-expiry' : 'status-' + status;
-  const _locs      = ['fridge', 'freezer', 'pantry'];
-  const _nextLoc   = _locs[(_locs.indexOf(currentTab) + 1) % 3];
-  const _moveEmoji = { fridge: '🧊', freezer: '❄️', pantry: '🫙' };
-  const _moveLabel = { fridge: 'Frigo', freezer: 'Congélateur', pantry: 'Placard' };
-  const moveTo     = _moveEmoji[_nextLoc];
-  const moveTitle  = 'Déplacer vers ' + _moveLabel[_nextLoc];
+  const moveTitle  = 'Déplacer…';
 
   return `
     <div class="item-wrapper" data-id="${item.id}">
@@ -124,7 +119,7 @@ function itemHTML(item) {
             <span class="item-expiry">${expiryLabel(item.exp) || '—'}</span>
           </div>
         </div>
-        <button class="btn-move" onclick="moveItem('${item.id}')" title="${moveTitle}">${moveTo}</button>
+        <button class="btn-move" onclick="openMove('${item.id}')" title="${moveTitle}">⇄</button>
         <div class="qty-control">
           <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
           <span class="qty-val">${item.qty}</span>

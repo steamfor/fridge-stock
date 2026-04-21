@@ -136,10 +136,40 @@ async function deleteItem(id) {
   if (error) { showToast('Erreur : ' + error.message); loadStock(); }
 }
 
-async function moveItem(id) {
+// ─── Picker de déplacement ────────────────────
+
+let _movingId = null;
+
+function openMove(id) {
+  _movingId = id;
+  const locs = ['fridge', 'freezer', 'pantry'];
+  const currentLoc = locs.find(loc => appData[loc].find(i => i.id === id));
+  locs.forEach(loc => {
+    const btn = document.getElementById('move-btn-' + loc);
+    if (!btn) return;
+    btn.disabled = loc === currentLoc;
+    btn.classList.toggle('move-loc-current', loc === currentLoc);
+  });
+  document.getElementById('modal-move').classList.add('open');
+}
+
+function closeMove() {
+  document.getElementById('modal-move').classList.remove('open');
+  _movingId = null;
+}
+
+function closeMoveOnBg(e) {
+  if (e.target === document.getElementById('modal-move')) closeMove();
+}
+
+async function confirmMove(to) {
+  const id = _movingId;
+  closeMove();
+  if (!id) return;
+
   const locs = ['fridge', 'freezer', 'pantry'];
   const from = locs.find(loc => appData[loc].find(i => i.id === id));
-  const to   = locs[(locs.indexOf(from) + 1) % 3];
+  if (!from || from === to) return;
 
   const item = appData[from].find(i => i.id === id);
   appData[from] = appData[from].filter(i => i.id !== id);
