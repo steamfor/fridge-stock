@@ -149,6 +149,21 @@
   </div>
 </div>
 
+<!-- ═══ MODAL : DÉPLACEMENT ═══ -->
+<div class="modal-overlay" id="modal-move" onclick="closeMoveOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⇄ &nbsp;Déplacer vers…</span>
+      <button class="btn-close" onclick="closeMove()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="move-loc-btn" id="move-btn-fridge"   onclick="confirmMove('fridge')">🧊 Frigo</button>
+      <button class="move-loc-btn" id="move-btn-freezer"  onclick="confirmMove('freezer')">❄️ Congélateur</button>
+      <button class="move-loc-btn" id="move-btn-pantry"   onclick="confirmMove('pantry')">🫙 Placard</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL : ÉDITION ═══ -->
 <div class="modal-overlay" id="modal-edit" onclick="closeEditOnBg(event)">
   <div class="modal">

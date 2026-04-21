@@ -28,8 +28,8 @@ let scanLocation    = 'freezer'; // Congélateur par défaut
 const CATEGORIES = [
   '🥩 Viande', '🐟 Poisson', '🥛 Laitier', '🧀 Fromage',
   '🥦 Légumes', '🍎 Fruits', '🍳 Œufs', '🧃 Boissons',
-  '🍝 Plats cuisinés', '🍚 Féculents', '🫙 Condiments',
-  '🍞 Boulangerie', '📦 Autre',
+  '🍱 Plat préparé', '🍝 Plats cuisinés', '🍚 Féculents',
+  '🍪 Biscuits & snacks', '🫙 Condiments', '🍞 Boulangerie', '📦 Autre',
 ];
 
 // Menu IA — options sélectionnées

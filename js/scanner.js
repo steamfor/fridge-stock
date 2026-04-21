@@ -2,31 +2,113 @@
 // SCANNER CODE-BARRES
 // ─────────────────────────────────────────────
 
+// Mapping Open Food Facts categories_tags → catégories app
+// Priorité : tags structurés d'abord, puis mots-clés texte libre
 const CATEGORY_MAP = [
-  { keywords: ['viande', 'meat'],               cat: '🥩 Viande'        },
-  { keywords: ['poisson', 'fish'],               cat: '🐟 Poisson'       },
-  { keywords: ['lait', 'dairy', 'yaourt'],       cat: '🥛 Laitier'       },
-  { keywords: ['fromage', 'cheese'],             cat: '🧀 Fromage'       },
-  { keywords: ['légume', 'vegetable'],           cat: '🥦 Légumes'       },
-  { keywords: ['fruit'],                         cat: '🍎 Fruits'        },
-  { keywords: ['boisson', 'beverage'],                    cat: '🧃 Boissons'      },
-  { keywords: ['pain', 'bread'],                          cat: '🍞 Boulangerie'   },
-  { keywords: ['oeuf', 'egg'],                            cat: '🍳 Œufs'         },
-  { keywords: ['féculent', 'pâtes', 'riz', 'semoule', 'céréale', 'pasta'], cat: '🍚 Féculents'    },
+  {
+    tags:     ['en:meats', 'en:meat', 'en:poultry', 'en:beef', 'en:pork', 'en:chicken',
+               'en:turkey', 'en:lamb', 'en:veal', 'en:charcuteries', 'en:deli-meats', 'en:sausages'],
+    keywords: ['viande', 'meat', 'poulet', 'bœuf', 'boeuf', 'porc', 'veau', 'agneau',
+               'charcuterie', 'jambon', 'saucisse', 'lardon', 'steak', 'rôti', 'escalope', 'dinde'],
+    cat: '🥩 Viande',
+  },
+  {
+    tags:     ['en:fish', 'en:fishes', 'en:seafood', 'en:crustaceans', 'en:shellfish', 'en:mollusks'],
+    keywords: ['poisson', 'fish', 'saumon', 'thon', 'cabillaud', 'crevette', 'sardine',
+               'maquereau', 'dorade', 'sole', 'seafood', 'fruits de mer', 'moule', 'coquille'],
+    cat: '🐟 Poisson',
+  },
+  {
+    tags:     ['en:cheeses', 'en:cheese'],
+    keywords: ['fromage', 'cheese', 'camembert', 'brie', 'gruyère', 'emmental',
+               'parmesan', 'mozzarella', 'gouda', 'comté', 'roquefort', 'chèvre'],
+    cat: '🧀 Fromage',
+  },
+  {
+    tags:     ['en:dairies', 'en:dairy', 'en:milks', 'en:yogurts', 'en:creams',
+               'en:butters', 'en:fermented-milks', 'en:fresh-cheeses'],
+    keywords: ['lait', 'dairy', 'yaourt', 'yogurt', 'crème', 'beurre', 'cream', 'milk', 'kéfir'],
+    cat: '🥛 Laitier',
+  },
+  {
+    tags:     ['en:eggs', 'en:egg-based-products'],
+    keywords: ['oeuf', 'egg', 'œuf'],
+    cat: '🍳 Œufs',
+  },
+  {
+    tags:     ['en:vegetables', 'en:fresh-vegetables', 'en:frozen-vegetables',
+               'en:canned-vegetables', 'en:root-vegetables', 'en:leafy-vegetables'],
+    keywords: ['légume', 'vegetable', 'carotte', 'tomate', 'épinard', 'courgette',
+               'salade', 'haricot', 'brocoli', 'poireau', 'champignon', 'oignon', 'ail',
+               'concombre', 'poivron', 'lentille', 'pois chiche'],
+    cat: '🥦 Légumes',
+  },
+  {
+    tags:     ['en:fruits', 'en:fresh-fruits', 'en:frozen-fruits', 'en:dried-fruits'],
+    keywords: ['fruit', 'pomme', 'poire', 'banane', 'orange', 'fraise', 'cerise',
+               'raisin', 'mangue', 'ananas', 'pêche', 'abricot', 'kiwi', 'citron'],
+    cat: '🍎 Fruits',
+  },
+  {
+    tags:     ['en:pasta', 'en:rice', 'en:cereals-and-their-products', 'en:grains',
+               'en:semolina', 'en:flours', 'en:corn', 'en:quinoa'],
+    keywords: ['féculent', 'pâtes', 'riz', 'semoule', 'céréale', 'pasta', 'rice',
+               'quinoa', 'boulgour', 'blé', 'farine', 'maïs', 'polenta'],
+    cat: '🍚 Féculents',
+  },
+  {
+    tags:     ['en:breads', 'en:bread', 'en:viennoiseries', 'en:rolls'],
+    keywords: ['pain', 'bread', 'baguette', 'brioche', 'croissant', 'viennoiserie'],
+    cat: '🍞 Boulangerie',
+  },
+  {
+    tags:     ['en:prepared-meals', 'en:ready-meals', 'en:frozen-meals',
+               'en:convenience-foods', 'en:meals', 'en:soups', 'en:pizzas',
+               'en:quiches', 'en:lasagnas', 'en:gratins', 'en:sandwiches'],
+    keywords: ['plat prépar', 'plat cuisiné', 'surgelé', 'lasagne', 'pizza', 'quiche',
+               'gratin', 'soupe', 'potage', 'hachis', 'parmentier', 'wok', 'paëlla', 'risotto'],
+    cat: '🍱 Plat préparé',
+  },
+  {
+    tags:     ['en:beverages', 'en:drinks', 'en:fruit-juices-and-nectars', 'en:sodas',
+               'en:waters', 'en:wines', 'en:beers', 'en:coffees', 'en:teas',
+               'en:plant-based-milks', 'en:energy-drinks', 'en:syrups'],
+    keywords: ['boisson', 'beverage', 'jus', 'soda', 'eau', 'thé', 'café', 'sirop', 'nectar'],
+    cat: '🧃 Boissons',
+  },
+  {
+    tags:     ['en:condiments', 'en:sauces', 'en:spreads', 'en:dressings', 'en:oils',
+               'en:vinegars', 'en:mustards', 'en:jams', 'en:honeys', 'en:pickles',
+               'en:canned-goods', 'en:preserved-foods'],
+    keywords: ['condiment', 'sauce', 'huile', 'vinaigre', 'moutarde', 'ketchup',
+               'mayonnaise', 'confiture', 'miel', 'cornichon', 'pesto', 'tapenade'],
+    cat: '🫙 Condiments',
+  },
+  {
+    tags:     ['en:snacks', 'en:sweet-snacks', 'en:salty-snacks', 'en:cookies',
+               'en:biscuits', 'en:crackers', 'en:chips', 'en:chocolates',
+               'en:candies', 'en:confectioneries', 'en:pastries', 'en:cakes'],
+    keywords: ['biscuit', 'cookie', 'chips', 'snack', 'chocolat', 'bonbon',
+               'cracker', 'gâteau', 'friandise', 'candy', 'cake'],
+    cat: '🍪 Biscuits & snacks',
+  },
 ];
 
-function guessCategoryFromTags(categoriesStr) {
-  const lower = (categoriesStr || '').toLowerCase();
-  const match = CATEGORY_MAP.find(({ keywords }) => keywords.some(k => lower.includes(k)));
-  return match ? match.cat : '';
+function guessCategoryFromTags(p) {
+  const tags = (p.categories_tags || []).map(t => t.toLowerCase());
+  const text = ((p.categories || '') + ' ' + (p.food_groups || '')).toLowerCase();
+
+  for (const { tags: entryTags = [], keywords = [], cat } of CATEGORY_MAP) {
+    if (entryTags.some(t => tags.includes(t))) return cat;
+    if (keywords.some(k => text.includes(k)))  return cat;
+  }
+  return '';
 }
 
 // ─── Ouverture / fermeture ────────────────────
 
 async function openBarcode() {
-  // Réinitialiser la destination au congélateur par défaut
   setScanLocation('freezer');
-
   document.getElementById('modal-barcode').classList.add('open');
   document.getElementById('scan-result-form').style.display = 'none';
 
@@ -135,7 +217,7 @@ async function onBarcodeFound(code) {
     if (json.status === 1 && json.product) {
       const p    = json.product;
       const name = p.product_name_fr || p.product_name || p.generic_name_fr || '';
-      const cat  = guessCategoryFromTags(p.categories);
+      const cat  = guessCategoryFromTags(p);
 
       if (name) {
         ind.className = 'scan-indicator found';
