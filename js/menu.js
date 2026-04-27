@@ -57,11 +57,14 @@ function renderMenuDays(days, el) {
           <span class="meal-type">${esc(m.type || '')}</span>
           <div class="meal-body">
             <div class="meal-name">${esc(m.dish || '')}</div>
-            ${m.note ? `<div class="meal-note">${esc(m.note)}</div>` : ''}
             ${(m.stock_items || []).length ? `
               <div class="meal-stock-items">
                 ${m.stock_items.map(s => `<span class="meal-stock-tag">📦 ${esc(s)}</span>`).join('')}
               </div>` : ''}
+            ${(m.steps || []).length ? `
+              <ol class="meal-steps">
+                ${m.steps.map(s => `<li class="meal-step">${esc(s)}</li>`).join('')}
+              </ol>` : ''}
           </div>
         </div>`).join('')}
     </div>`
@@ -116,9 +119,14 @@ CONTRAINTES:
 - Utilise au max les produits du stock
 
 JSON uniquement, sans markdown:
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","note":"conseil de préparation court","stock_items":["Nom exact produit 1","Nom exact produit 2"]}]}]}
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","stock_items":["Nom exact produit 1","Nom exact produit 2"],"steps":["Sortir X du congélateur. Préchauffer le four à 200°C.","Enfourner 25 min.","Servir avec salade."]}]}]}
 
-- stock_items: noms EXACTS des produits du stock à sortir pour ce repas (recopie les noms tels quels depuis la liste stock)`;
+Règles pour steps:
+- 2 à 4 étapes maximum, ultra-courtes (1 phrase chacune)
+- Commencer par "Sortir X" si produit congelé
+- Inclure température et durée de cuisson précises
+- Finir par le dressage si pertinent
+- stock_items: noms EXACTS des produits du stock à sortir (recopie les noms tels quels depuis la liste stock)`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
