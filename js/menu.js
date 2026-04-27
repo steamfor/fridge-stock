@@ -134,7 +134,7 @@ Règles steps (obligatoires) :
         'Authorization': 'Bearer ' + mistralKey,
       },
       body: JSON.stringify({
-        model: 'mistral-small-latest',
+        model: 'mistral-large-latest',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 4000,
