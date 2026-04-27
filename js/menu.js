@@ -55,9 +55,13 @@ function renderMenuDays(days, el) {
       ${(day.meals || []).map(m => `
         <div class="menu-meal">
           <span class="meal-type">${esc(m.type || '')}</span>
-          <div>
+          <div class="meal-body">
             <div class="meal-name">${esc(m.dish || '')}</div>
             ${m.note ? `<div class="meal-note">${esc(m.note)}</div>` : ''}
+            ${(m.stock_items || []).length ? `
+              <div class="meal-stock-items">
+                ${m.stock_items.map(s => `<span class="meal-stock-tag">📦 ${esc(s)}</span>`).join('')}
+              </div>` : ''}
           </div>
         </div>`).join('')}
     </div>`
@@ -112,7 +116,9 @@ CONTRAINTES:
 - Utilise au max les produits du stock
 
 JSON uniquement, sans markdown:
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","note":"ingrédients stock utilisés"}]}]}`;
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","note":"conseil de préparation court","stock_items":["Nom exact produit 1","Nom exact produit 2"]}]}]}
+
+- stock_items: noms EXACTS des produits du stock à sortir pour ce repas (recopie les noms tels quels depuis la liste stock)`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
