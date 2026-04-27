@@ -30,15 +30,18 @@ function toggleChip(btn) {
 // ─── Résumé du stock pour le prompt ──────────
 
 function buildStockSummary() {
-  const all = [...appData.fridge, ...appData.freezer, ...appData.pantry];
-  if (!all.length) return null;
-
-  const urgent = all.filter(i => ['warn', 'expired'].includes(expiryStatus(i.exp)));
-  const normal = all.filter(i => !['warn', 'expired'].includes(expiryStatus(i.exp)));
-
-  let s = 'STOCK:\n';
-  if (urgent.length) { s += 'Urgence:\n';    urgent.forEach(i => s += `- ${i.name} x${i.qty}\n`); }
-  if (normal.length) { s += 'Disponible:\n'; normal.forEach(i => s += `- ${i.name} x${i.qty}\n`); }
+  const locLabel = { fridge: 'Frigo', freezer: 'Congélateur', pantry: 'Placard' };
+  const urgent = [], normal = [];
+  ['fridge', 'freezer', 'pantry'].forEach(loc => {
+    appData[loc].forEach(i => {
+      const entry = `- ${i.name} x${i.qty} [${locLabel[loc]}]`;
+      (['warn', 'expired'].includes(expiryStatus(i.exp)) ? urgent : normal).push(entry);
+    });
+  });
+  if (!urgent.length && !normal.length) return null;
+  let s = '';
+  if (urgent.length) s += `URGENT (expire bientôt — à utiliser en priorité absolue):\n${urgent.join('\n')}\n\n`;
+  if (normal.length) s += `DISPONIBLE:\n${normal.join('\n')}`;
   return s;
 }
 
@@ -94,39 +97,34 @@ async function generateMenus() {
   resultEl.classList.add('show');
   contentEl.innerHTML = Array(5).fill('<div class="skeleton-line"></div>').join('');
 
-  const timeLabel = {
-    rapide: 'maximum 20 min, recettes simples',
-    mijote: 'plats mijotés longtemps, en sauce',
-  }[menuTime] || '30 à 45 minutes';
+  const timeLimits = { rapide: '⚡ MOINS DE 20 MINUTES — plats simples, rien qui mijote', normal: '30 à 45 minutes', mijote: '1 heure ou plus, plats mijotés' };
+  const timeLabel  = timeLimits[menuTime] || timeLimits.normal;
 
   const menuExtra = document.getElementById('menu-extra').value.trim();
   const stock     = buildStockSummary();
   const mealsStr  = [...menuMeals].join(', ');
 
-  const prompt = `Tu es un diététicien-cuisinier français expert en cuisine du quotidien.
+  const prompt = `Tu es un assistant cuisine. Génère des menus en respectant STRICTEMENT toutes les contraintes.
 
-${menuExtra ? `⛔ INTERDICTIONS ABSOLUES — ne jamais utiliser ces ingrédients dans aucun plat : ${menuExtra}. Vérifie chaque plat proposé.` : ''}
-
+${menuExtra ? `⛔ INTERDIT absolument : ${menuExtra}.\n` : ''}STOCK (utiliser UNIQUEMENT ces produits — sel, poivre, huile autorisés):
 ${stock}
-CONTRAINTES:
-- ${parseInt(menuDays)} jour(s), repas: ${mealsStr}
-- Régime: ${menuDiet}
-- Priorité: ${menuPrio}
-- Temps: ${timeLabel}
-- Cuisine française et méditerranéenne uniquement
-- OBLIGATOIRE: chaque déjeuner/dîner = protéine (viande/poisson/oeuf) + féculent (riz/pâtes/semoule) + légume
-- Petit-déjeuner: pain + laitage + fruit
-- Utilise au max les produits du stock
 
-JSON uniquement, sans markdown:
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","stock_items":["Nom exact produit 1","Nom exact produit 2"],"steps":["Sortir X du congélateur. Préchauffer le four à 200°C.","Enfourner 25 min.","Servir avec salade."]}]}]}
+CONTRAINTES STRICTES:
+1. ${parseInt(menuDays)} jour(s), repas à inclure : ${mealsStr}
+2. Régime : ${menuDiet}
+3. Temps de préparation : ${timeLabel} — NE PAS DÉPASSER
+4. Priorité : ${menuPrio}
+5. N'utilise QUE des produits listés dans le stock ci-dessus. Si un produit manque pour un plat, choisis un autre plat.
+6. Ne mentionne JAMAIS un produit absent du stock dans stock_items.
 
-Règles pour steps:
-- 2 à 4 étapes maximum, ultra-courtes (1 phrase chacune)
-- Commencer par "Sortir X" si produit congelé
-- Inclure température et durée de cuisson précises
-- Finir par le dressage si pertinent
-- stock_items: noms EXACTS des produits du stock à sortir (recopie les noms tels quels depuis la liste stock)`;
+FORMAT JSON strict, sans markdown :
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","stock_items":["nom exact du produit tel qu'écrit dans le stock"],"steps":["Étape 1.","Étape 2.","Étape 3."]}]}]}
+
+Règles steps (obligatoires) :
+- 2 à 4 étapes, 1 phrase chacune, ultra-concrètes
+- Si produit congelé : commencer par "Sortir [nom] du congélateur."
+- Inclure température four et durée exactes si applicable
+- Dernière étape = service/dressage`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -136,9 +134,9 @@ Règles pour steps:
         'Authorization': 'Bearer ' + mistralKey,
       },
       body: JSON.stringify({
-        model: 'mistral-small-latest',
+        model: 'mistral-large-latest',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 4000,
         response_format: { type: 'json_object' },
       }),
