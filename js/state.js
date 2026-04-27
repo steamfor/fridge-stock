@@ -6,6 +6,8 @@
 let sbClient    = null;
 let realtimeSub = null;
 let mistralKey  = '';
+let openaiKey   = '';
+let anthropicKey = '';
 
 // Navigation
 let currentTab  = 'freezer'; // Congélateur par défaut
@@ -38,3 +40,5 @@ let menuDiet  = 'aucune contrainte';
 let menuPrio  = 'utiliser en priorité les produits qui expirent bientôt';
 let menuTime  = 'rapide';
 let menuMeals = new Set(['déjeuner', 'dîner']);
+let menuAI    = 'mistral';
+let menuBatch = false;
