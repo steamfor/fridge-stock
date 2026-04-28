@@ -197,7 +197,7 @@
       <span class="modal-title">✦ &nbsp;Proposition de menus</span>
       <button class="btn-close" onclick="closeMenu()">✕</button>
     </div>
-    <div class="menu-intro">Mistral va suggérer des menus équilibrés en fonction de votre stock.</div>
+    <div class="menu-intro">L'IA va suggérer des menus équilibrés en fonction de votre stock.</div>
     <div class="menu-options">
       <div>
         <div class="menu-option-label">Nombre de jours</div>
@@ -238,6 +238,20 @@
           <button class="chip selected" data-val="rapide" onclick="selectChip(this,'time')">⚡ Rapide (&lt;20 min)</button>
           <button class="chip" data-val="normal"          onclick="selectChip(this,'time')">🍳 Normal (30-45 min)</button>
           <button class="chip" data-val="mijote"          onclick="selectChip(this,'time')">🫕 Mijoté (1h+)</button>
+        </div>
+      </div>
+      <div>
+        <div class="menu-option-label">Mode batch cooking</div>
+        <div class="menu-chips" id="chips-batch">
+          <button class="chip" data-val="batch" onclick="toggleBatch(this)">🍳 Batch cooking — tout préparer en 1 session (3 jours)</button>
+        </div>
+      </div>
+      <div>
+        <div class="menu-option-label">Modèle IA</div>
+        <div class="menu-chips" id="chips-ai">
+          <button class="chip selected" data-val="mistral"   onclick="selectAI(this)">✦ Mistral</button>
+          <button class="chip"          data-val="openai"    onclick="selectAI(this)">⚡ ChatGPT</button>
+          <button class="chip"          data-val="anthropic" onclick="selectAI(this)">◆ Claude</button>
         </div>
       </div>
       <div>

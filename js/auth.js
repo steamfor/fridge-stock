@@ -115,9 +115,16 @@ function enterApp() {
   showScreen('app');
   loadStock();
   subscribeRealtime();
-  // Charger la clé Mistral depuis la BDD
-  sbClient.from('config').select('value').eq('key', 'mistral_key').single()
-    .then(({ data }) => { if (data) mistralKey = data.value; });
+  // Charger les clés API depuis la BDD
+  sbClient.from('config').select('key, value').in('key', ['mistral_key', 'openai_key', 'anthropic_key'])
+    .then(({ data }) => {
+      if (!data) return;
+      data.forEach(row => {
+        if (row.key === 'mistral_key')   mistralKey   = row.value;
+        if (row.key === 'openai_key')    openaiKey    = row.value;
+        if (row.key === 'anthropic_key') anthropicKey = row.value;
+      });
+    });
 }
 
 function doLogout() {
@@ -125,6 +132,8 @@ function doLogout() {
   localStorage.removeItem('fs_auth');
   appData = { fridge: [], freezer: [] };
   mistralKey = '';
+  openaiKey = '';
+  anthropicKey = '';
   closeSettings();
   showScreen('login');
   setTimeout(() => document.getElementById('login-password')?.focus(), 100);
