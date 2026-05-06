@@ -200,6 +200,16 @@
     <div class="menu-intro">L'IA va suggérer des menus équilibrés en fonction de votre stock.</div>
     <div class="menu-options">
       <div>
+        <div class="menu-option-label">Nombre de personnes</div>
+        <div class="menu-chips" id="chips-persons">
+          <button class="chip"          data-val="1" onclick="selectChip(this,'persons')">1 pers.</button>
+          <button class="chip selected" data-val="2" onclick="selectChip(this,'persons')">2 pers.</button>
+          <button class="chip"          data-val="3" onclick="selectChip(this,'persons')">3 pers.</button>
+          <button class="chip"          data-val="4" onclick="selectChip(this,'persons')">4 pers.</button>
+          <button class="chip"          data-val="6" onclick="selectChip(this,'persons')">6 pers.</button>
+        </div>
+      </div>
+      <div>
         <div class="menu-option-label">Nombre de jours</div>
         <div class="menu-chips" id="chips-days">
           <button class="chip selected" data-val="1" onclick="selectChip(this,'days')">1 jour</button>

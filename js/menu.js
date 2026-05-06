@@ -9,10 +9,11 @@ function selectChip(btn, group) {
     .querySelectorAll('.chip')
     .forEach(c => c.classList.remove('selected'));
   btn.classList.add('selected');
-  if (group === 'days') menuDays = btn.dataset.val;
-  if (group === 'diet') menuDiet = btn.dataset.val;
-  if (group === 'prio') menuPrio = btn.dataset.val;
-  if (group === 'time') menuTime = btn.dataset.val;
+  if (group === 'days')    menuDays    = btn.dataset.val;
+  if (group === 'diet')    menuDiet    = btn.dataset.val;
+  if (group === 'prio')    menuPrio    = btn.dataset.val;
+  if (group === 'time')    menuTime    = btn.dataset.val;
+  if (group === 'persons') menuPersons = btn.dataset.val;
 }
 
 function toggleChip(btn) {
@@ -202,11 +203,12 @@ ${stock}
 
 CONTRAINTES STRICTES:
 1. ${numDays} jour(s), repas à inclure : ${mealsStr}
-2. Régime : ${menuDiet}
-3. Temps de préparation : ${timeLabel} — NE PAS DÉPASSER
-4. Priorité : ${menuPrio}
-5. N'utilise QUE des produits listés dans le stock ci-dessus. Si un produit manque pour un plat, choisis un autre plat.
-6. Ne mentionne JAMAIS un produit absent du stock dans stock_items.
+2. Nombre de personnes : ${menuPersons} — adapter les quantités en conséquence
+3. Régime : ${menuDiet}
+4. Temps de préparation : ${timeLabel} — NE PAS DÉPASSER
+5. Priorité : ${menuPrio}
+6. N'utilise QUE des produits listés dans le stock ci-dessus. Si un produit manque pour un plat, choisis un autre plat.
+7. Ne mentionne JAMAIS un produit absent du stock dans stock_items.
 ${batchSection}
 FORMAT JSON strict, sans markdown :
 {"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat","stock_items":["nom exact du produit tel qu'écrit dans le stock"],"steps":["Étape 1.","Étape 2.","Étape 3."]}]}]}
