@@ -42,3 +42,4 @@ let menuTime  = 'rapide';
 let menuMeals = new Set(['déjeuner', 'dîner']);
 let menuAI    = 'mistral';
 let menuBatch = false;
+let menuPersons = '2';
