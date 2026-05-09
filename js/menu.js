@@ -188,8 +188,8 @@ async function generateMenus() {
     normal: { label: '45 minutes (cuisson incluse)', note: '',                                                            max: 45 },
     mijote: { label: '1 heure ou plus',              note: 'Plats mijotés, rôtis, sauces longues bienvenus.',            max: 90 },
   };
-  const time    = timeCfg[menuTime] || timeCfg.normal;
-  const stock   = buildStockSummary();
+  const time     = timeCfg[menuTime] || timeCfg.normal;
+  const stock    = buildStockSummary();
   const mealsStr = [...menuMeals].join(' + ');
   const numDays  = menuBatch ? 3 : parseInt(menuDays);
   const persons  = menuPersons || '2';
