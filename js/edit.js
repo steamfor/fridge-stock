@@ -4,7 +4,7 @@
 // ─────────────────────────────────────────────
 
 function openEdit(id) {
-  const item = [...appData.fridge, ...appData.freezer].find(i => i.id === id);
+  const item = [...appData.fridge, ...appData.freezer, ...appData.pantry].find(i => i.id === id);
   if (!item) return;
 
   editingId = id;

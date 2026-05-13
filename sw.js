@@ -2,21 +2,24 @@
 // SERVICE WORKER — Cache statique (cache-first)
 // ─────────────────────────────────────────────
 
-const CACHE_NAME = 'fridgestock-v1';
+const CACHE_NAME = 'fridgestock-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/app.css',
-  '/js/state.js',
-  '/js/utils.js',
-  '/js/auth.js',
-  '/js/render.js',
-  '/js/stock.js',
-  '/js/scanner.js',
-  '/js/edit.js',
-  '/js/notifications.js',
-  '/js/menu.js',
-  '/js/app.js',
+  './',
+  './index.html',
+  './css/app.css',
+  './js/state.js',
+  './js/utils.js',
+  './js/auth.js',
+  './js/render.js',
+  './js/stock.js',
+  './js/scanner.js',
+  './js/edit.js',
+  './js/notifications.js',
+  './js/menu.js',
+  './js/app.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
 ];
 
 self.addEventListener('install', event => {

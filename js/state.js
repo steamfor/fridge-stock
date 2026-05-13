@@ -6,13 +6,15 @@
 let sbClient    = null;
 let realtimeSub = null;
 let mistralKey  = '';
+let openaiKey   = '';
+let anthropicKey = '';
 
 // Navigation
 let currentTab  = 'freezer'; // Congélateur par défaut
 let currentSort = 'name';
 
 // Données stock (chargées depuis Supabase)
-let appData = { fridge: [], freezer: [] };
+let appData = { fridge: [], freezer: [], pantry: [] };
 
 // Édition
 let editingId = null;
@@ -28,8 +30,8 @@ let scanLocation    = 'freezer'; // Congélateur par défaut
 const CATEGORIES = [
   '🥩 Viande', '🐟 Poisson', '🥛 Laitier', '🧀 Fromage',
   '🥦 Légumes', '🍎 Fruits', '🍳 Œufs', '🧃 Boissons',
-  '🍝 Plats cuisinés', '🍚 Féculents', '🫙 Condiments',
-  '🍞 Boulangerie', '📦 Autre',
+  '🍱 Plat préparé', '🍝 Plats cuisinés', '🍚 Féculents',
+  '🍪 Biscuits & snacks', '🫙 Condiments', '🍞 Boulangerie', '📦 Autre',
 ];
 
 // Menu IA — options sélectionnées
@@ -38,3 +40,6 @@ let menuDiet  = 'aucune contrainte';
 let menuPrio  = 'utiliser en priorité les produits qui expirent bientôt';
 let menuTime  = 'rapide';
 let menuMeals = new Set(['déjeuner', 'dîner']);
+let menuAI    = 'mistral';
+let menuBatch = false;
+let menuPersons = '2';

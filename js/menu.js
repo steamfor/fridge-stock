@@ -85,7 +85,7 @@ function buildStockSummary() {
   });
   if (!urgent.length && !normal.length) return null;
   let s = '';
-  if (urgent.length) s += `⚠️ URGENT — à utiliser en PRIORITÉ ABSOLUE (expire <3 jours) :\n${urgent.join('\n')}\n\n`;
+  if (urgent.length) s += `⚠️ URGENT — à utiliser en PRIORITÉ ABSOLUE (expire dans <3 jours) :\n${urgent.join('\n')}\n\n`;
   if (normal.length) s += `✅ DISPONIBLE :\n${normal.join('\n')}`;
   return s;
 }
