@@ -6,10 +6,10 @@
 <title>FridgeStock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b1628">
 <script>if(localStorage.getItem('theme')==='light')document.documentElement.setAttribute('data-theme','light');</script>
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/app.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -63,12 +63,15 @@
   </header>
 
   <div class="quick-add-row">
-    <button class="btn-quick btn-menu" onclick="openMenu()">✦ &nbsp;Proposer des menus</button>
+    <button class="btn-quick btn-menu" onclick="openMenu()">❆ &nbsp;Proposer des menus</button>
+    <button class="btn-quick btn-receipt" onclick="openReceipt()">📄 &nbsp;Ticket de caisse</button>
+    <button class="btn-quick btn-photoscan" onclick="openPhotoScan()" style="flex-basis:100%;">📸 &nbsp;Scanner un placard / frigo</button>
   </div>
 
   <div class="tabs">
-    <button class="tab"        data-tab="fridge"  onclick="switchTab('fridge')">🧊 Frigo <span class="count" id="count-fridge">0</span></button>
+    <button class="tab"        data-tab="fridge"  onclick="switchTab('fridge')">🧨 Frigo <span class="count" id="count-fridge">0</span></button>
     <button class="tab active" data-tab="freezer" onclick="switchTab('freezer')">❄️ Congél. <span class="count" id="count-freezer">0</span></button>
+    <button class="tab"        data-tab="pantry"  onclick="switchTab('pantry')">🫙 Placard <span class="count" id="count-pantry">0</span></button>
   </div>
 
   <div class="add-form">
@@ -90,7 +93,7 @@
   </div>
 
   <div class="search-wrap">
-    <input type="text" id="search" placeholder="🔍  Rechercher…" oninput="debouncedRender()">
+    <input type="text" id="search" placeholder="🔍 Rechercher…" oninput="debouncedRender()">
   </div>
   <div class="sort-row">
     <span class="sort-label">Trier :</span>
@@ -123,7 +126,8 @@
     <div id="scan-result-form" style="display:none;margin-top:16px;flex-direction:column;gap:10px;">
       <div class="scan-location-toggle">
         <button class="loc-btn active" data-loc="freezer" onclick="setScanLocation('freezer')">❄️ Congélateur</button>
-        <button class="loc-btn"        data-loc="fridge"  onclick="setScanLocation('fridge')">🧊 Frigo</button>
+        <button class="loc-btn"        data-loc="fridge"  onclick="setScanLocation('fridge')">🧨 Frigo</button>
+        <button class="loc-btn"        data-loc="pantry"  onclick="setScanLocation('pantry')">🫙 Placard</button>
       </div>
       <div class="form-row">
         <input type="text"   id="scan-name" placeholder="Nom du produit">
@@ -143,6 +147,21 @@
         <button class="btn-scan-add"      onclick="addFromScan()">Ajouter ＋</button>
         <button class="btn-scan-continue" onclick="addFromScanAndContinue()">Ajouter &amp; continuer ↩</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL : DÉPLACEMENT ═══ -->
+<div class="modal-overlay" id="modal-move" onclick="closeMoveOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⇄ &nbsp;Déplacer vers…</span>
+      <button class="btn-close" onclick="closeMove()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <button class="move-loc-btn" id="move-btn-fridge"   onclick="confirmMove('fridge')">🧨 Frigo</button>
+      <button class="move-loc-btn" id="move-btn-freezer"  onclick="confirmMove('freezer')">❄️ Congélateur</button>
+      <button class="move-loc-btn" id="move-btn-pantry"   onclick="confirmMove('pantry')">🫙 Placard</button>
     </div>
   </div>
 </div>
@@ -176,11 +195,21 @@
 <div class="modal-overlay" id="modal-menu" onclick="closeMenuOnBg(event)">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">✦ &nbsp;Proposition de menus</span>
+      <span class="modal-title">❆ &nbsp;Proposition de menus</span>
       <button class="btn-close" onclick="closeMenu()">✕</button>
     </div>
-    <div class="menu-intro">Mistral va suggérer des menus équilibrés en fonction de votre stock.</div>
+    <div class="menu-intro">L'IA va suggérer des menus équilibrés en fonction de votre stock.</div>
     <div class="menu-options">
+      <div>
+        <div class="menu-option-label">Nombre de personnes</div>
+        <div class="menu-chips" id="chips-persons">
+          <button class="chip"          data-val="1" onclick="selectChip(this,'persons')">1 pers.</button>
+          <button class="chip selected" data-val="2" onclick="selectChip(this,'persons')">2 pers.</button>
+          <button class="chip"          data-val="3" onclick="selectChip(this,'persons')">3 pers.</button>
+          <button class="chip"          data-val="4" onclick="selectChip(this,'persons')">4 pers.</button>
+          <button class="chip"          data-val="6" onclick="selectChip(this,'persons')">6 pers.</button>
+        </div>
+      </div>
       <div>
         <div class="menu-option-label">Nombre de jours</div>
         <div class="menu-chips" id="chips-days">
@@ -223,6 +252,20 @@
         </div>
       </div>
       <div>
+        <div class="menu-option-label">Mode batch cooking</div>
+        <div class="menu-chips" id="chips-batch">
+          <button class="chip" data-val="batch" onclick="toggleBatch(this)">🍳 Batch cooking — tout préparer en 1 session (3 jours)</button>
+        </div>
+      </div>
+      <div>
+        <div class="menu-option-label">Modèle IA</div>
+        <div class="menu-chips" id="chips-ai">
+          <button class="chip selected" data-val="mistral"   onclick="selectAI(this)">❆ Mistral</button>
+          <button class="chip"          data-val="openai"    onclick="selectAI(this)">⚡ ChatGPT</button>
+          <button class="chip"          data-val="anthropic" onclick="selectAI(this)">◆ Claude</button>
+        </div>
+      </div>
+      <div>
         <div class="menu-option-label">Contraintes supplémentaires (optionnel)</div>
         <textarea id="menu-extra" placeholder="Ex: sans pommes de terre, mon fils n'aime pas le poisson…" rows="3"
           style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--font);font-size:0.82rem;color:var(--text);outline:none;resize:vertical;transition:border 0.2s;line-height:1.5;"
@@ -230,9 +273,66 @@
           onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
     </div>
-    <button class="btn-generate" id="btn-generate" onclick="generateMenus()">✦ &nbsp;Générer les menus</button>
+    <button class="btn-generate" id="btn-generate" onclick="generateMenus()">❆ &nbsp;Générer les menus</button>
     <div class="menu-result" id="menu-result">
       <div id="menu-result-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL : TICKET DE CAISSE ═══ -->
+<div class="modal-overlay" id="modal-receipt" onclick="closeReceiptOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📄 &nbsp;Ticket de caisse</span>
+      <button class="btn-close" onclick="closeReceipt()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="scan-location-toggle">
+        <button class="receipt-loc-btn loc-btn active" data-loc="freezer" onclick="setReceiptLocation('freezer')">❄️ Congél.</button>
+        <button class="receipt-loc-btn loc-btn"        data-loc="fridge"  onclick="setReceiptLocation('fridge')">🧨 Frigo</button>
+        <button class="receipt-loc-btn loc-btn"        data-loc="pantry"  onclick="setReceiptLocation('pantry')">🫙 Placard</button>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="receipt-input-btn" onclick="receiptImportPdf()">📎 &nbsp;Importer PDF</button>
+        <button class="receipt-input-btn" onclick="receiptScanPhoto()">📷 &nbsp;Scanner photo</button>
+      </div>
+      <div>
+        <div class="menu-option-label" style="margin-bottom:8px;">ou collez le texte du ticket</div>
+        <textarea id="receipt-text" class="receipt-textarea" rows="5"
+          placeholder="Copiez-collez ici le texte de votre ticket de caisse…"></textarea>
+      </div>
+      <button class="btn-parse" id="btn-receipt-parse" onclick="parseReceipt()">🔍 Analyser le texte</button>
+      <div id="receipt-preview-section" style="display:none;">
+        <div class="menu-option-label" style="margin-bottom:8px;">Produits détectés — modifiez si besoin</div>
+        <div class="receipt-items" id="receipt-preview"></div>
+        <button class="btn-generate" id="btn-receipt-confirm" style="display:none;" onclick="confirmReceiptImport()">＋ &nbsp;Ajouter au stock</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL : SCAN PHOTO STOCK ═══ -->
+<div class="modal-overlay" id="modal-photo-scan" onclick="closePhotoScanOnBg(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📸 &nbsp;Scanner le stock</span>
+      <button class="btn-close" onclick="closePhotoScan()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="menu-intro">Photographiez votre frigo, congélateur ou placard — Pixtral identifie automatiquement tous les produits visibles.</div>
+      <div class="scan-location-toggle">
+        <button class="photoscan-loc-btn loc-btn" data-loc="fridge"  onclick="setPhotoScanLoc('fridge')">🧨 Frigo</button>
+        <button class="photoscan-loc-btn loc-btn" data-loc="freezer" onclick="setPhotoScanLoc('freezer')">❄️ Congél.</button>
+        <button class="photoscan-loc-btn loc-btn active" data-loc="pantry" onclick="setPhotoScanLoc('pantry')">🫙 Placard</button>
+      </div>
+      <button class="btn-parse" id="btn-photoscan-capture" onclick="triggerPhotoCapture()">📷 Prendre / choisir une photo</button>
+      <img id="photoscan-thumb" src="" alt="Aperçu" style="display:none;width:100%;border-radius:var(--radius);object-fit:cover;max-height:200px;border:1px solid var(--border);">
+      <div id="photoscan-preview-section" style="display:none;">
+        <div class="menu-option-label" style="margin-bottom:8px;">Produits détectés — modifiez si besoin</div>
+        <div class="receipt-items" id="photoscan-preview"></div>
+        <button class="btn-generate" id="btn-photoscan-confirm" style="display:none;" onclick="confirmPhotoScanImport()">＋ &nbsp;Ajouter au stock</button>
+      </div>
     </div>
   </div>
 </div>
@@ -270,6 +370,8 @@
 <script src="js/edit.js"></script>
 <script src="js/notifications.js"></script>
 <script src="js/menu.js"></script>
+<script src="js/receipt.js"></script>
+<script src="js/photoscan.js"></script>
 <script src="js/app.js"></script>
 
 </body>
