@@ -95,13 +95,15 @@ header { width: 100%; max-width: 480px; padding: 36px 20px 0; display: flex; jus
 .btn-icon { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 40px; height: 40px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-dim); transition: all 0.2s; backdrop-filter: blur(12px); }
 .btn-icon:hover { background: var(--bg-card-hv); border-color: var(--border-hv); }
 
-.quick-add-row { width: 100%; max-width: 480px; padding: 20px 20px 0; display: flex; gap: 10px; }
+.quick-add-row { width: 100%; max-width: 480px; padding: 20px 20px 0; display: flex; gap: 10px; flex-wrap: wrap; }
 .btn-quick { flex: 1; padding: 13px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-family: var(--font); font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s; backdrop-filter: blur(12px); }
 .btn-quick:active { transform: scale(0.97); }
 .btn-barcode { background: linear-gradient(135deg, rgba(59,158,255,0.15), rgba(0,229,255,0.08)); color: var(--blue-light); border-color: rgba(59,158,255,0.25); }
 .btn-barcode:hover { background: linear-gradient(135deg, rgba(59,158,255,0.22), rgba(0,229,255,0.14)); border-color: rgba(59,158,255,0.45); }
 .btn-menu { background: linear-gradient(135deg, rgba(0,214,143,0.12), rgba(0,229,255,0.06)); color: #00d68f; border-color: rgba(0,214,143,0.22); }
 .btn-menu:hover { background: linear-gradient(135deg, rgba(0,214,143,0.2), rgba(0,229,255,0.1)); border-color: rgba(0,214,143,0.4); }
+.btn-photoscan { background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(139,92,246,0.06)); color: #a855f7; border-color: rgba(168,85,247,0.22); }
+.btn-photoscan:hover { background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(139,92,246,0.12)); border-color: rgba(168,85,247,0.42); }
 
 /* ─────────────────────────────────────────────
    TABS
@@ -261,6 +263,12 @@ select option { background: #0d1e38; color: var(--text); }
 .meal-steps { counter-reset: step; }
 [data-theme="light"] .meal-steps { background: rgba(0,0,0,0.03); border-left-color: rgba(37,99,235,0.25); }
 [data-theme="light"] .meal-step::before { color: var(--blue-core); }
+
+/* ─────────────────────────────────────────────
+   MENU WARNINGS
+───────────────────────────────────────────── */
+.menu-warnings { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.menu-warning { font-size: 0.75rem; color: #f5a623; background: rgba(255,170,0,0.08); border: 1px solid rgba(255,170,0,0.2); border-radius: var(--radius-sm); padding: 8px 12px; line-height: 1.5; }
 
 /* ─────────────────────────────────────────────
    SETTINGS MODAL
