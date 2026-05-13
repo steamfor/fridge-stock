@@ -69,7 +69,7 @@
   </div>
 
   <div class="tabs">
-    <button class="tab"        data-tab="fridge"  onclick="switchTab('fridge')">🧨 Frigo <span class="count" id="count-fridge">0</span></button>
+    <button class="tab"        data-tab="fridge"  onclick="switchTab('fridge')">🧊 Frigo <span class="count" id="count-fridge">0</span></button>
     <button class="tab active" data-tab="freezer" onclick="switchTab('freezer')">❄️ Congél. <span class="count" id="count-freezer">0</span></button>
     <button class="tab"        data-tab="pantry"  onclick="switchTab('pantry')">🫙 Placard <span class="count" id="count-pantry">0</span></button>
   </div>
@@ -93,7 +93,7 @@
   </div>
 
   <div class="search-wrap">
-    <input type="text" id="search" placeholder="🔍 Rechercher…" oninput="debouncedRender()">
+    <input type="text" id="search" placeholder="🔍 Rechercher…" oninput="debouncedRender()">
   </div>
   <div class="sort-row">
     <span class="sort-label">Trier :</span>
@@ -126,7 +126,7 @@
     <div id="scan-result-form" style="display:none;margin-top:16px;flex-direction:column;gap:10px;">
       <div class="scan-location-toggle">
         <button class="loc-btn active" data-loc="freezer" onclick="setScanLocation('freezer')">❄️ Congélateur</button>
-        <button class="loc-btn"        data-loc="fridge"  onclick="setScanLocation('fridge')">🧨 Frigo</button>
+        <button class="loc-btn"        data-loc="fridge"  onclick="setScanLocation('fridge')">🧊 Frigo</button>
         <button class="loc-btn"        data-loc="pantry"  onclick="setScanLocation('pantry')">🫙 Placard</button>
       </div>
       <div class="form-row">
@@ -159,7 +159,7 @@
       <button class="btn-close" onclick="closeMove()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="move-loc-btn" id="move-btn-fridge"   onclick="confirmMove('fridge')">🧨 Frigo</button>
+      <button class="move-loc-btn" id="move-btn-fridge"   onclick="confirmMove('fridge')">🧊 Frigo</button>
       <button class="move-loc-btn" id="move-btn-freezer"  onclick="confirmMove('freezer')">❄️ Congélateur</button>
       <button class="move-loc-btn" id="move-btn-pantry"   onclick="confirmMove('pantry')">🫙 Placard</button>
     </div>
@@ -290,7 +290,7 @@
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="scan-location-toggle">
         <button class="receipt-loc-btn loc-btn active" data-loc="freezer" onclick="setReceiptLocation('freezer')">❄️ Congél.</button>
-        <button class="receipt-loc-btn loc-btn"        data-loc="fridge"  onclick="setReceiptLocation('fridge')">🧨 Frigo</button>
+        <button class="receipt-loc-btn loc-btn"        data-loc="fridge"  onclick="setReceiptLocation('fridge')">🧊 Frigo</button>
         <button class="receipt-loc-btn loc-btn"        data-loc="pantry"  onclick="setReceiptLocation('pantry')">🫙 Placard</button>
       </div>
       <div style="display:flex;gap:8px;">
@@ -322,11 +322,15 @@
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div class="menu-intro">Photographiez votre frigo, congélateur ou placard — Pixtral identifie automatiquement tous les produits visibles.</div>
       <div class="scan-location-toggle">
-        <button class="photoscan-loc-btn loc-btn" data-loc="fridge"  onclick="setPhotoScanLoc('fridge')">🧨 Frigo</button>
+        <button class="photoscan-loc-btn loc-btn" data-loc="fridge"  onclick="setPhotoScanLoc('fridge')">🧊 Frigo</button>
         <button class="photoscan-loc-btn loc-btn" data-loc="freezer" onclick="setPhotoScanLoc('freezer')">❄️ Congél.</button>
         <button class="photoscan-loc-btn loc-btn active" data-loc="pantry" onclick="setPhotoScanLoc('pantry')">🫙 Placard</button>
       </div>
-      <button class="btn-parse" id="btn-photoscan-capture" onclick="triggerPhotoCapture()">📷 Prendre / choisir une photo</button>
+      <div style="display:flex;gap:8px;">
+        <button class="receipt-input-btn" id="btn-photoscan-camera" onclick="triggerPhotoCapture(true)">📷 &nbsp;Appareil photo</button>
+        <button class="receipt-input-btn" id="btn-photoscan-gallery" onclick="triggerPhotoCapture(false)">🖼️ &nbsp;Galerie</button>
+      </div>
+      <div id="photoscan-status" style="display:none;font-size:0.82rem;color:var(--text-faint);text-align:center;padding:4px 0;"></div>
       <img id="photoscan-thumb" src="" alt="Aperçu" style="display:none;width:100%;border-radius:var(--radius);object-fit:cover;max-height:200px;border:1px solid var(--border);">
       <div id="photoscan-preview-section" style="display:none;">
         <div class="menu-option-label" style="margin-bottom:8px;">Produits détectés — modifiez si besoin</div>

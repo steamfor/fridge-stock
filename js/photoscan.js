@@ -16,9 +16,15 @@ function openPhotoScan() {
   const thumb = document.getElementById('photoscan-thumb');
   thumb.src           = '';
   thumb.style.display = 'none';
-  const btn = document.getElementById('btn-photoscan-capture');
-  btn.disabled    = false;
-  btn.textContent = '📷 Prendre / choisir une photo';
+  _setPhotoCaptureButtons(false, '');
+}
+
+function _setPhotoCaptureButtons(disabled, statusText) {
+  document.getElementById('btn-photoscan-camera').disabled  = disabled;
+  document.getElementById('btn-photoscan-gallery').disabled = disabled;
+  const status = document.getElementById('photoscan-status');
+  status.style.display = statusText ? '' : 'none';
+  status.textContent   = statusText;
 }
 
 function closePhotoScan() {
@@ -36,13 +42,14 @@ function setPhotoScanLoc(loc) {
   );
 }
 
-// ─── Déclenchement capture ──────────────────
+// ─── Déclenchement capture ────────────────────
 
-function triggerPhotoCapture() {
+function triggerPhotoCapture(useCamera) {
   if (!mistralKey) { showToast('Clé Mistral non configurée.'); return; }
   const input = document.createElement('input');
   input.type   = 'file';
   input.accept = 'image/*';
+  if (useCamera) input.capture = 'environment';
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -54,12 +61,10 @@ function triggerPhotoCapture() {
   input.click();
 }
 
-// ─── Analyse Pixtral ──────────────────────
+// ─── Analyse Pixtral ──────────────────────────
 
 async function _analyzeShelfPhoto(file) {
-  const btn = document.getElementById('btn-photoscan-capture');
-  btn.disabled    = true;
-  btn.textContent = 'Analyse en cours…';
+  _setPhotoCaptureButtons(true, 'Analyse en cours…');
 
   try {
     const base64   = await _fileToBase64(file);
@@ -112,11 +117,10 @@ async function _analyzeShelfPhoto(file) {
     showToast('Erreur analyse : ' + err.message);
   }
 
-  btn.disabled    = false;
-  btn.textContent = '📷 Analyser une autre photo';
+  _setPhotoCaptureButtons(false, '');
 }
 
-// ─── Prévisualisation ─────────────────────
+// ─── Prévisualisation ─────────────────────────
 
 function _renderPhotoScanPreview() {
   const section    = document.getElementById('photoscan-preview-section');
@@ -154,7 +158,7 @@ function _removePhotoScanItem(i) {
   _renderPhotoScanPreview();
 }
 
-// ─── Import en masse ──────────────────────
+// ─── Import en masse ──────────────────────────
 
 async function confirmPhotoScanImport() {
   const items = _photoScanItems.filter(i => i.name);
