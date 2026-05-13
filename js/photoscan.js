@@ -63,11 +63,10 @@ async function _startCamera() {
     _photoScanStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
     });
-    const video = document.getElementById('photoscan-video');
-    video.srcObject = _photoScanStream;
+    document.getElementById('photoscan-video').srcObject = _photoScanStream;
     _setCameraMode(true);
   } catch (err) {
-    showToast('Impossible d\'accéder à la caméra : ' + err.message);
+    showToast("Impossible d'accéder à la caméra : " + err.message);
   }
 }
 
@@ -76,8 +75,7 @@ function _stopCamera() {
     _photoScanStream.getTracks().forEach(t => t.stop());
     _photoScanStream = null;
   }
-  const video = document.getElementById('photoscan-video');
-  video.srcObject = null;
+  document.getElementById('photoscan-video').srcObject = null;
   _setCameraMode(false);
 }
 
@@ -89,7 +87,7 @@ function _captureFromVideo() {
   canvas.getContext('2d').drawImage(video, 0, 0);
   _stopCamera();
   canvas.toBlob(async (blob) => {
-    const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+    const file  = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
     const thumb = document.getElementById('photoscan-thumb');
     thumb.src           = URL.createObjectURL(blob);
     thumb.style.display = 'block';
@@ -124,48 +122,10 @@ async function _analyzeShelfPhoto(file) {
     const base64   = await _fileToBase64(file);
     const mimeType = file.type || 'image/jpeg';
     const catList  = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
+    const prompt   = `Tu es un assistant qui identifie les produits alimentaires dans une photo de réfrigérateur, congélateur ou placard.\n\nExamine attentivement cette photo et liste TOUS les produits alimentaires visibles.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication) :\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍚 Féculents"}]}\n\nRègles :\n- Identifie TOUS les produits visibles, même partiellement (boîtes, paquets, bouteilles, conserves, légumes, fruits, etc.)\n- qty = nombre d'unités visibles du même produit (défaut 1)\n- Noms simples et lisibles en français (ex : "Pâtes fusilli", "Sauce tomate", "Yaourt nature")\n- Ignore les produits non alimentaires (produits ménagers, emballages vides, etc.)\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
 
-    const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + mistralKey,
-      },
-      body: JSON.stringify({
-        model: 'pixtral-12b-2409',
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Tu es un assistant qui identifie les produits alimentaires dans une photo de réfrigérateur, congélateur ou placard.\n\nExamine attentivement cette photo et liste TOUS les produits alimentaires visibles.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication) :\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍚 Féculents"}]}\n\nRègles :\n- Identifie TOUS les produits visibles, même partiellement (boîtes, paquets, bouteilles, conserves, légumes, fruits, etc.)\n- qty = nombre d'unités visibles du même produit (défaut 1)\n- Noms simples et lisibles en français (ex : "Pâtes fusilli", "Sauce tomate", "Yaourt nature")\n- Ignore les produits non alimentaires (produits ménagers, emballages vides, etc.)\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`,
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:${mimeType};base64,${base64}` },
-            },
-          ],
-        }],
-        temperature: 0.1,
-        max_tokens:  2000,
-      }),
-    });
-
-    const j = await r.json();
-    if (!r.ok) throw new Error(j?.message || r.statusText);
-
-    const raw  = (j.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();
-    const json = raw.match(/\{[\s\S]*\}/)?.[0];
-    if (!json) throw new Error('Réponse inattendue de l\'IA');
-
-    _photoScanItems = (JSON.parse(json).items || [])
-      .map(i => {
-        const name = String(i.name || '').trim();
-        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
-        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
-      })
-      .filter(i => i.name);
-
+    const raw = await _callMistralVision(base64, mimeType, prompt);
+    _photoScanItems = _parseAIFoodItems(raw);
     _renderPhotoScanPreview();
   } catch (err) {
     showToast('Erreur analyse : ' + err.message);
@@ -188,22 +148,7 @@ function _renderPhotoScanPreview() {
     return;
   }
 
-  preview.innerHTML = _photoScanItems.map((item, i) => `
-    <div class="receipt-item-row">
-      <input type="text" class="receipt-item-name" value="${esc(item.name)}"
-        onchange="_photoScanItems[${i}].name = this.value.trim()"
-        placeholder="Nom du produit">
-      <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
-        onchange="_photoScanItems[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
-      <select class="receipt-item-cat" onchange="_photoScanItems[${i}].cat = this.value">
-        <option value="">📦 Autre</option>
-        ${CATEGORIES.filter(c => c !== '📦 Autre').map(c =>
-          `<option value="${c}"${item.cat === c ? ' selected' : ''}>${esc(c)}</option>`
-        ).join('')}
-      </select>
-      <button class="receipt-item-del" onclick="_removePhotoScanItem(${i})" title="Supprimer">✕</button>
-    </div>`).join('');
-
+  preview.innerHTML    = _renderFoodItemRows(_photoScanItems, '_photoScanItems', '_removePhotoScanItem');
   confirmBtn.style.display = '';
 }
 

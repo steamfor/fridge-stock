@@ -34,7 +34,7 @@ function setReceiptLocation(loc) {
   );
 }
 
-// ─── Import PDF ───────────────────────────────
+// ─── Import PDF ─────────────────────────────
 
 function receiptImportPdf() {
   const input = document.createElement('input');
@@ -93,63 +93,16 @@ function receiptScanPhoto() {
 async function _ocrReceiptImage(file) {
   const parseBtn = document.getElementById('btn-receipt-parse');
   parseBtn.disabled    = true;
-  parseBtn.textContent = 'Lecture de l\'image…';
+  parseBtn.textContent = "Lecture de l'image…";
 
   try {
     const base64   = await _fileToBase64(file);
     const mimeType = file.type || 'image/jpeg';
+    const catList  = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
+    const prompt   = `Extrait les articles alimentaires de ce ticket de caisse.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown):\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}\n\nRègles:\n- Produits alimentaires uniquement (pas sacs, cartes, etc.)\n- Ignore totaux, taxes, remises, codes articles\n- qty = quantité entière ≥ 1 (défaut 1)\n- Noms lisibles, sans codes internes\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune)`;
 
-    const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + mistralKey,
-      },
-      body: JSON.stringify({
-        model: 'pixtral-12b-2409',
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Extrait les articles alimentaires de ce ticket de caisse.
-
-Réponds UNIQUEMENT avec ce JSON valide (sans markdown):
-{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
-
-Règles:
-- Produits alimentaires uniquement (pas sacs, cartes, etc.)
-- Ignore totaux, taxes, remises, codes articles
-- qty = quantité entière ≥ 1 (défaut 1)
-- Noms lisibles, sans codes internes
-- cat = une de ces catégories exactes : ${CATEGORIES.filter(c => c !== '📦 Autre').join(', ')} (ou "" si aucune)`,
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:${mimeType};base64,${base64}` },
-            },
-          ],
-        }],
-        temperature: 0.1,
-        max_tokens:  2000,
-      }),
-    });
-
-    const j = await r.json();
-    if (!r.ok) throw new Error(j?.message || r.statusText);
-
-    const raw  = (j.choices?.[0]?.message?.content || '').replace(/```json|```/g, '').trim();
-    const json = raw.match(/\{[\s\S]*\}/)?.[0];
-    if (!json) throw new Error('Réponse inattendue');
-
-    _parsedReceiptItems = (JSON.parse(json).items || [])
-      .map(i => {
-        const name = String(i.name || '').trim();
-        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
-        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
-      })
-      .filter(i => i.name);
-
+    const raw = await _callMistralVision(base64, mimeType, prompt);
+    _parsedReceiptItems = _parseAIFoodItems(raw);
     document.getElementById('receipt-preview-section').style.display = '';
     renderReceiptPreview();
   } catch (err) {
@@ -160,7 +113,7 @@ Règles:
   parseBtn.textContent = '🔍 Analyser le texte';
 }
 
-// ─── Parsing texte via Mistral ────────────────
+// ─── Parsing texte via Mistral ────────────────────
 
 async function parseReceipt() {
   const text = document.getElementById('receipt-text').value.trim();
@@ -172,21 +125,7 @@ async function parseReceipt() {
   btn.textContent = 'Analyse en cours…';
 
   const catList = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
-  const prompt = `Extrait les articles alimentaires d'un ticket de caisse français.
-
-Ticket:
-${text}
-
-Réponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication):
-{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}
-
-Règles strictes:
-- Ne garde que les produits alimentaires (pas les sacs, emballages, cartes cadeaux, etc.)
-- Ignore les totaux, taxes, remises, codes articles, numéros
-- qty = quantité achetée (entier ≥ 1, défaut 1 si non précisé)
-- Simplifie et nettoie les noms (lisibles, sans codes internes)
-- Si le même produit apparaît plusieurs fois, somme les quantités
-- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
+  const prompt  = `Extrait les articles alimentaires d'un ticket de caisse français.\n\nTicket:\n${text}\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication):\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}\n\nRègles strictes:\n- Ne garde que les produits alimentaires (pas les sacs, emballages, cartes cadeaux, etc.)\n- Ignore les totaux, taxes, remises, codes articles, numéros\n- qty = quantité achetée (entier ≥ 1, défaut 1 si non précisé)\n- Simplifie et nettoie les noms (lisibles, sans codes internes)\n- Si le même produit apparaît plusieurs fois, somme les quantités\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
 
   try {
     const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -205,15 +144,7 @@ Règles strictes:
     });
     const j = await r.json();
     if (!r.ok) throw new Error(j?.message || r.statusText);
-
-    const raw = (j.choices?.[0]?.message?.content || '{}').replace(/```json|```/g, '').trim();
-    _parsedReceiptItems = (JSON.parse(raw).items || [])
-      .map(i => {
-        const name = String(i.name || '').trim();
-        const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
-        return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
-      })
-      .filter(i => i.name);
+    _parsedReceiptItems = _parseAIFoodItems(j.choices?.[0]?.message?.content || '{}');
     renderReceiptPreview();
   } catch (err) {
     showToast('Erreur : ' + err.message);
@@ -226,7 +157,7 @@ Règles strictes:
   btn.textContent = '🔍 Analyser à nouveau';
 }
 
-// ─── Prévisualisation ─────────────────────────
+// ─── Prévisualisation ───────────────────────────
 
 function renderReceiptPreview() {
   const section    = document.getElementById('receipt-preview-section');
@@ -240,22 +171,7 @@ function renderReceiptPreview() {
     return;
   }
 
-  preview.innerHTML = _parsedReceiptItems.map((item, i) => `
-    <div class="receipt-item-row">
-      <input type="text" class="receipt-item-name" value="${esc(item.name)}"
-        onchange="_parsedReceiptItems[${i}].name = this.value.trim()"
-        placeholder="Nom du produit">
-      <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
-        onchange="_parsedReceiptItems[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
-      <select class="receipt-item-cat" onchange="_parsedReceiptItems[${i}].cat = this.value">
-        <option value="">📦 Autre</option>
-        ${CATEGORIES.filter(c => c !== '📦 Autre').map(c =>
-          `<option value="${c}"${item.cat === c ? ' selected' : ''}>${esc(c)}</option>`
-        ).join('')}
-      </select>
-      <button class="receipt-item-del" onclick="_removeReceiptItem(${i})" title="Supprimer">✕</button>
-    </div>`).join('');
-
+  preview.innerHTML    = _renderFoodItemRows(_parsedReceiptItems, '_parsedReceiptItems', '_removeReceiptItem');
   confirmBtn.style.display = '';
 }
 
@@ -264,7 +180,7 @@ function _removeReceiptItem(i) {
   renderReceiptPreview();
 }
 
-// ─── Import en masse ──────────────────────────
+// ─── Import en masse ───────────────────────────
 
 async function confirmReceiptImport() {
   const items = _parsedReceiptItems.filter(i => i.name);
@@ -291,7 +207,7 @@ async function confirmReceiptImport() {
   }
 }
 
-// ─── Utilitaires ──────────────────────────────
+// ─── Utilitaires ───────────────────────────────
 
 function _fileToBase64(file) {
   return new Promise((resolve, reject) => {
