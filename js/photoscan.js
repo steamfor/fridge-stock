@@ -4,6 +4,7 @@
 
 let _photoScanItems   = [];
 let photoScanLocation = 'pantry';
+let _photoScanStream  = null;
 
 function openPhotoScan() {
   _photoScanItems   = [];
@@ -16,7 +17,14 @@ function openPhotoScan() {
   const thumb = document.getElementById('photoscan-thumb');
   thumb.src           = '';
   thumb.style.display = 'none';
+  _setCameraMode(false);
   _setPhotoCaptureButtons(false, '');
+}
+
+function _setCameraMode(active) {
+  document.getElementById('photoscan-capture-btns').style.display   = active ? 'none' : '';
+  document.getElementById('photoscan-video').style.display           = active ? 'block' : 'none';
+  document.getElementById('btn-photoscan-shutter').style.display     = active ? '' : 'none';
 }
 
 function _setPhotoCaptureButtons(disabled, statusText) {
@@ -28,6 +36,7 @@ function _setPhotoCaptureButtons(disabled, statusText) {
 }
 
 function closePhotoScan() {
+  _stopCamera();
   document.getElementById('modal-photo-scan').classList.remove('open');
 }
 
@@ -42,14 +51,59 @@ function setPhotoScanLoc(loc) {
   );
 }
 
-// ─── Déclenchement capture ────────────────────
+// ─── Caméra live ───────────────────────────────
 
-function triggerPhotoCapture(useCamera) {
+async function _startCamera() {
+  if (!mistralKey) { showToast('Clé Mistral non configurée.'); return; }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showToast('Caméra non disponible sur ce navigateur.');
+    return;
+  }
+  try {
+    _photoScanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
+    });
+    const video = document.getElementById('photoscan-video');
+    video.srcObject = _photoScanStream;
+    _setCameraMode(true);
+  } catch (err) {
+    showToast('Impossible d\'accéder à la caméra : ' + err.message);
+  }
+}
+
+function _stopCamera() {
+  if (_photoScanStream) {
+    _photoScanStream.getTracks().forEach(t => t.stop());
+    _photoScanStream = null;
+  }
+  const video = document.getElementById('photoscan-video');
+  video.srcObject = null;
+  _setCameraMode(false);
+}
+
+function _captureFromVideo() {
+  const video  = document.getElementById('photoscan-video');
+  const canvas = document.createElement('canvas');
+  canvas.width  = video.videoWidth  || 1280;
+  canvas.height = video.videoHeight || 960;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  _stopCamera();
+  canvas.toBlob(async (blob) => {
+    const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+    const thumb = document.getElementById('photoscan-thumb');
+    thumb.src           = URL.createObjectURL(blob);
+    thumb.style.display = 'block';
+    await _analyzeShelfPhoto(file);
+  }, 'image/jpeg', 0.92);
+}
+
+// ─── Déclenchement galerie ───────────────────────
+
+function triggerPhotoCapture() {
   if (!mistralKey) { showToast('Clé Mistral non configurée.'); return; }
   const input = document.createElement('input');
   input.type   = 'file';
   input.accept = 'image/*';
-  if (useCamera) input.capture = 'environment';
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
