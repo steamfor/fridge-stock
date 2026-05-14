@@ -96,8 +96,8 @@ async function _ocrReceiptImage(file) {
   parseBtn.textContent = "Lecture de l'image…";
 
   try {
-    const base64   = await _fileToBase64(file);
-    const mimeType = file.type || 'image/jpeg';
+    const base64   = await _resizeImageToBase64(file);
+    const mimeType = 'image/jpeg';
     const catList  = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
     const prompt   = `Extrait les articles alimentaires de ce ticket de caisse.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown):\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍱 Plat préparé"}]}\n\nRègles:\n- Produits alimentaires uniquement (pas sacs, cartes, etc.)\n- Ignore totaux, taxes, remises, codes articles\n- qty = quantité entière ≥ 1 (défaut 1)\n- Noms lisibles, sans codes internes\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune)`;
 
