@@ -22,7 +22,7 @@ function openPhotoScan() {
 }
 
 function _setCameraMode(active) {
-  document.getElementById('photoscan-capture-btns').style.display   = active ? 'none' : '';
+  document.getElementById('photoscan-capture-btns').style.display   = active ? 'none' : 'flex';
   document.getElementById('photoscan-video').style.display           = active ? 'block' : 'none';
   document.getElementById('btn-photoscan-shutter').style.display     = active ? '' : 'none';
 }
