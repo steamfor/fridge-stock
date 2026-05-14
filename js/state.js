@@ -25,6 +25,7 @@ let barcodeReader   = null;
 let scannerRunning  = false;
 let lastScannedCode = null;
 let scanLocation    = 'freezer'; // Congélateur par défaut
+let scanMode        = 'add';     // 'add' | 'delete'
 
 // Catégories disponibles (source unique pour tous les selects)
 const CATEGORIES = [
