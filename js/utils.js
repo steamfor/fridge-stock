@@ -111,6 +111,31 @@ function expiryLabel(d) {
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
+// ─── Resize image avant envoi à l'IA ─────────────
+
+function _resizeImageToBase64(file, maxPx = 800, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale  = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 // ─── Mistral Vision (Pixtral) ────────────────────
 
 async function _callMistralVision(base64, mimeType, promptText) {

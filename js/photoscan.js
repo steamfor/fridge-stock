@@ -81,10 +81,11 @@ function _stopCamera() {
 
 function _captureFromVideo() {
   const video  = document.getElementById('photoscan-video');
+  const scale  = Math.min(1, 800 / Math.max(video.videoWidth || 1280, video.videoHeight || 960));
   const canvas = document.createElement('canvas');
-  canvas.width  = video.videoWidth  || 1280;
-  canvas.height = video.videoHeight || 960;
-  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.width  = Math.round((video.videoWidth  || 1280) * scale);
+  canvas.height = Math.round((video.videoHeight || 960)  * scale);
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
   _stopCamera();
   canvas.toBlob(async (blob) => {
     const file  = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
@@ -92,7 +93,7 @@ function _captureFromVideo() {
     thumb.src           = URL.createObjectURL(blob);
     thumb.style.display = 'block';
     await _analyzeShelfPhoto(file);
-  }, 'image/jpeg', 0.92);
+  }, 'image/jpeg', 0.75);
 }
 
 // ─── Déclenchement galerie ───────────────────────
@@ -119,10 +120,10 @@ async function _analyzeShelfPhoto(file) {
   _setPhotoCaptureButtons(true, 'Analyse en cours…');
 
   try {
-    const base64   = await _fileToBase64(file);
-    const mimeType = file.type || 'image/jpeg';
+    const base64   = await _resizeImageToBase64(file);
+    const mimeType = 'image/jpeg';
     const catList  = CATEGORIES.filter(c => c !== '📦 Autre').join(', ');
-    const prompt   = `Tu es un assistant qui identifie les produits alimentaires dans une photo de réfrigérateur, congélateur ou placard.\n\nExamine attentivement cette photo et liste TOUS les produits alimentaires visibles.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication) :\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍚 Féculents"}]}\n\nRègles :\n- Identifie TOUS les produits visibles, même partiellement (boîtes, paquets, bouteilles, conserves, légumes, fruits, etc.)\n- qty = nombre d'unités visibles du même produit (défaut 1)\n- Noms simples et lisibles en français (ex : "Pâtes fusilli", "Sauce tomate", "Yaourt nature")\n- Ignore les produits non alimentaires (produits ménagers, emballages vides, etc.)\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
+    const prompt   = `Tu es un assistant spécialisé dans la reconnaissance de produits alimentaires en photo.\n\nExamine cette photo et liste uniquement les produits que tu identifies avec certitude.\n\nRéponds UNIQUEMENT avec ce JSON valide (sans markdown, sans explication) :\n{"items":[{"name":"Nom du produit","qty":1,"cat":"🍚 Féculents"}]}\n\nRègles STRICTES :\n- N'inclus un produit QUE si tu le vois clairement (emballage reconnaissable, forme identifiable avec certitude)\n- NE devine PAS et NE hallucine PAS — il vaut mieux en manquer que d'en inventer\n- Lis les étiquettes quand elles sont lisibles pour un nom précis (ex : "Yaourt Danone Nature" plutôt que "Yaourt")\n- Pour les produits frais sans étiquette : utilise une description simple (ex : "Carottes", "Pommes", "Steak haché")\n- qty = nombre d'unités clairement visibles du même produit (défaut 1)\n- Ignore les produits non alimentaires, ustensiles, emballages vides\n- cat = une de ces catégories exactes : ${catList} (ou "" si aucune ne correspond)`;
 
     const raw = await _callMistralVision(base64, mimeType, prompt);
     _photoScanItems = _parseAIFoodItems(raw);
