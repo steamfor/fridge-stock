@@ -229,6 +229,15 @@ select option { background: #0d1e38; color: var(--text); }
 .scan-btns { display: flex; gap: 8px; }
 .btn-scan-add      { flex: 1; padding: 13px 10px; background: linear-gradient(135deg, var(--blue-core), #1a6fd4); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 20px rgba(59,158,255,0.25); }
 .btn-scan-continue { flex: 1; padding: 13px 10px; background: linear-gradient(135deg, rgba(0,214,143,0.12), rgba(0,229,255,0.08)); color: var(--ok); border: 1px solid rgba(0,214,143,0.35); border-radius: var(--radius-sm); font-family: var(--font); font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.scan-delete-row  { display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; }
+.scan-delete-info { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.scan-delete-name { font-size:0.9rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.scan-delete-meta { font-size:0.75rem; color:var(--text-dim); }
+.scan-delete-btns { display:flex; gap:6px; flex-shrink:0; }
+.btn-scan-minus { padding:8px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-size:0.9rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-scan-minus:hover { background:var(--bg-card-hv); border-color:var(--border-hv); }
+.btn-scan-del   { padding:8px 12px; background:rgba(255,77,109,0.08); border:1px solid rgba(255,77,109,0.25); border-radius:var(--radius-sm); color:var(--expired); font-size:0.8rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-scan-del:hover { background:rgba(255,77,109,0.15); border-color:rgba(255,77,109,0.4); }
 
 /* ─────────────────────────────────────────────
    MENU MODAL

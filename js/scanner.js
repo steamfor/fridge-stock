@@ -116,9 +116,13 @@ function guessCategoryFromName(name) {
 // ─── Ouverture / fermeture ────────────────────
 
 async function openBarcode() {
+  scanMode = 'add';
+  document.getElementById('scan-mode-add').classList.add('active');
+  document.getElementById('scan-mode-delete').classList.remove('active');
   setScanLocation('freezer');
   document.getElementById('modal-barcode').classList.add('open');
   document.getElementById('scan-result-form').style.display = 'none';
+  document.getElementById('scan-delete-result').style.display = 'none';
 
   const ind = document.getElementById('scan-indicator');
   ind.className = 'scan-indicator';
@@ -151,6 +155,21 @@ function closeBarcode() {
 
 function closeBarcodeOnBg(e) {
   if (e.target === document.getElementById('modal-barcode')) closeBarcode();
+}
+
+// ─── Mode ajouter / supprimer ─────────────────
+
+function setScanMode(mode) {
+  scanMode = mode;
+  document.getElementById('scan-mode-add').classList.toggle('active', mode === 'add');
+  document.getElementById('scan-mode-delete').classList.toggle('active', mode === 'delete');
+  document.getElementById('scan-result-form').style.display = 'none';
+  document.getElementById('scan-delete-result').style.display = 'none';
+  const ind = document.getElementById('scan-indicator');
+  ind.className = 'scan-indicator loading';
+  ind.innerHTML = '<span class="pulse">●</span>&nbsp;Cherche un code-barres…';
+  lastScannedCode = null;
+  if (!scannerRunning) startDecoding(document.getElementById('camera-view'));
 }
 
 // ─── Décodage ─────────────────────────────────
@@ -230,30 +249,89 @@ async function onBarcodeFound(code) {
       if (name) {
         ind.className = 'scan-indicator found';
         ind.innerHTML = '✓ &nbsp;' + esc(name);
-        document.getElementById('scan-name').value = name;
-        document.getElementById('scan-cat').value  = cat;
-        document.getElementById('scan-qty').value  = 1;
-        document.getElementById('scan-exp').value  = '';
-        document.getElementById('scan-result-form').style.display = 'flex';
-        document.getElementById('scan-exp').focus();
         stopScanner();
+        if (scanMode === 'delete') {
+          _showDeleteResult(name);
+        } else {
+          document.getElementById('scan-name').value = name;
+          document.getElementById('scan-cat').value  = cat;
+          document.getElementById('scan-qty').value  = 1;
+          document.getElementById('scan-exp').value  = '';
+          document.getElementById('scan-result-form').style.display = 'flex';
+          document.getElementById('scan-exp').focus();
+        }
         return;
       }
     }
 
-    // Produit non trouvé — saisie manuelle
+    // Produit non trouvé dans OPF
     ind.className = 'scan-indicator';
     ind.innerHTML = `Code <strong>${code}</strong> introuvable — saisissez le nom :`;
-    document.getElementById('scan-name').value = '';
-    document.getElementById('scan-cat').value  = '';
-    document.getElementById('scan-result-form').style.display = 'flex';
-    document.getElementById('scan-name').focus();
     stopScanner();
+    if (scanMode === 'delete') {
+      _showDeleteResult(null);
+    } else {
+      document.getElementById('scan-name').value = '';
+      document.getElementById('scan-cat').value  = '';
+      document.getElementById('scan-result-form').style.display = 'flex';
+      document.getElementById('scan-name').focus();
+    }
   } catch (e) {
     ind.className = 'scan-indicator';
     ind.textContent = 'Erreur réseau.';
-    document.getElementById('scan-result-form').style.display = 'flex';
-    document.getElementById('scan-name').focus();
     stopScanner();
+    if (scanMode === 'add') {
+      document.getElementById('scan-result-form').style.display = 'flex';
+      document.getElementById('scan-name').focus();
+    }
   }
+}
+
+// ─── Suppression par scan ──────────────────────
+
+function _showDeleteResult(name) {
+  const container = document.getElementById('scan-delete-result');
+  const locLabel  = { fridge: '🧊 Frigo', freezer: '❄️ Congélateur', pantry: '🫙 Placard' };
+
+  if (!name) {
+    container.innerHTML = '<div style="color:var(--text-faint);font-size:0.85rem;text-align:center;padding:8px 0;">Produit non reconnu — impossible de rechercher dans le stock.</div>';
+    container.style.display = 'flex';
+    return;
+  }
+
+  const matches = [];
+  for (const loc of ['fridge', 'freezer', 'pantry']) {
+    const item = appData[loc].find(i => i.name.toLowerCase() === name.toLowerCase());
+    if (item) matches.push({ ...item, location: loc });
+  }
+
+  if (!matches.length) {
+    container.innerHTML = `<div style="color:var(--text-faint);font-size:0.85rem;text-align:center;padding:8px 0;">« ${esc(name)} » n'est pas dans votre stock.</div>`;
+  } else {
+    container.innerHTML = matches.map(item => `
+      <div class="scan-delete-row">
+        <div class="scan-delete-info">
+          <span class="scan-delete-name">${esc(item.name)}</span>
+          <span class="scan-delete-meta">${locLabel[item.location]} &nbsp;·&nbsp; Qté : ${item.qty}</span>
+        </div>
+        <div class="scan-delete-btns">
+          <button class="btn-scan-minus" onclick="removeOneFromScan('${item.id}','${item.location}',${item.qty})">−1</button>
+          <button class="btn-scan-del"   onclick="deleteFromScan('${item.id}')">Supprimer</button>
+        </div>
+      </div>`).join('');
+  }
+  container.style.display = 'flex';
+}
+
+async function removeOneFromScan(id, location, currentQty) {
+  if (currentQty <= 1) { await deleteFromScan(id); return; }
+  await changeQty(id, -1);
+  showToast('Quantité mise à jour ✓');
+  closeBarcode();
+}
+
+async function deleteFromScan(id) {
+  await deleteItem(id);
+  showToast('Produit supprimé ✓');
+  closeBarcode();
 }

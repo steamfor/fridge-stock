@@ -120,6 +120,10 @@
       <span class="modal-title">▦ &nbsp;Scanner un code-barres</span>
       <button class="btn-close" onclick="closeBarcode()">✕</button>
     </div>
+    <div class="scan-location-toggle" style="margin-top:4px;">
+      <button class="loc-btn active" id="scan-mode-add"    onclick="setScanMode('add')">＋&nbsp;Ajouter</button>
+      <button class="loc-btn"        id="scan-mode-delete" onclick="setScanMode('delete')">✕&nbsp;Supprimer</button>
+    </div>
     <video id="camera-view" autoplay playsinline muted></video>
     <div class="camera-hint">Pointez vers le code-barres — détection automatique</div>
     <div class="scan-indicator" id="scan-indicator">Démarrage…</div>
@@ -148,6 +152,7 @@
         <button class="btn-scan-continue" onclick="addFromScanAndContinue()">Ajouter &amp; continuer ↩</button>
       </div>
     </div>
+    <div id="scan-delete-result" style="display:none;flex-direction:column;gap:8px;margin-top:16px;"></div>
   </div>
 </div>
 
