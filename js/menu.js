@@ -226,6 +226,7 @@ async function generateMenus() {
   const numDays   = menuBatch ? 3 : parseInt(menuDays);
   const persons   = menuPersons || '2';
   const menuExtra = document.getElementById('menu-extra').value.trim();
+  const menuInspo = document.getElementById('menu-inspo').value.trim();
 
   const batchSection = menuBatch ? `
 # MODE BATCH COOKING
@@ -235,10 +236,16 @@ async function generateMenus() {
 - Indiquer les quantités à préparer d'avance (ex : "Cuire 400 g de riz pour 3 jours").
 ` : '';
 
-  const prompt = `# RÔLE
-Tu es un chef cuisinier expérimenté spécialisé dans la cuisine du quotidien et la lutte anti-gaspillage. Ta mission : créer des menus réalistes, savoureux et équilibrés à partir du stock disponible, en évitant que des produits soient jetés.
+  const inspoSection = `# INSPIRATION CULINAIRE
+Inspire-toi du style de Cyril Lignac (émission "Tous en cuisine") et de Philippe Etchebest (https://philippe-etchebest.com/recettes-mentor/) : recettes bistronomiques accessibles, techniques précises, cuisine française du quotidien généreuse et savoureuse.${menuInspo ? `\nL'utilisateur souhaite également s'inspirer de : ${menuInspo}` : ''}
+Reflète ce style dans les noms de plats, les associations d'ingrédients et les techniques de cuisson — sans jamais inventer d'ingrédients absents du stock.
 
-# CONTEXTE
+`;
+
+  const prompt = `# RÔLE
+Tu es un chef cuisinier français expérimenté, dans l'esprit de Cyril Lignac ou Philippe Etchebest, spécialisé dans la cuisine du quotidien savoureuse, accessible et anti-gaspillage. Ta mission : créer des menus réalistes, savoureux et équilibrés à partir du stock disponible, en évitant que des produits soient jetés.
+
+${inspoSection}# CONTEXTE
 L'utilisateur gère son stock alimentaire via une application. Tu reçois son inventaire actuel (avec catégorie nutritionnelle de chaque produit) et tu dois générer un menu qui maximise l'usage des produits proches de la péremption, tout en respectant les règles de composition d'un repas équilibré.
 ${menuExtra ? `\n⛔ ALLERGIES / INTERDICTIONS ABSOLUES : ${menuExtra}. Vérifie chaque plat proposé.\n` : ''}
 # CATÉGORIES DE PRODUITS (à comprendre pour bien composer les repas)

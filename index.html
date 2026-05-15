@@ -272,6 +272,14 @@
           onfocus="this.style.borderColor='rgba(59,158,255,0.5)'"
           onblur="this.style.borderColor='var(--border)'"></textarea>
       </div>
+      <div>
+        <div class="menu-option-label">Inspiration culinaire (optionnel)</div>
+        <textarea id="menu-inspo" placeholder="Ex: Jamie Oliver, cuisine japonaise, https://mon-site-de-recettes.fr/…" rows="2"
+          style="width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-family:var(--font);font-size:0.82rem;color:var(--text);outline:none;resize:vertical;transition:border 0.2s;line-height:1.5;"
+          onfocus="this.style.borderColor='rgba(59,158,255,0.5)'"
+          onblur="this.style.borderColor='var(--border)'"></textarea>
+        <div style="font-size:0.72rem;color:var(--text-faint);margin-top:5px;">Par défaut : style Cyril Lignac (Tous en cuisine) &amp; Philippe Etchebest. Un lien vers un site de recettes est accepté mais le modèle ne le visitera pas — il utilisera sa connaissance du chef.</div>
+      </div>
     </div>
     <button class="btn-generate" id="btn-generate" onclick="generateMenus()">❆ &nbsp;Générer les menus</button>
     <div class="menu-result" id="menu-result">
