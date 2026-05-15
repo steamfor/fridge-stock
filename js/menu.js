@@ -63,7 +63,7 @@ function _itemPromptCategory(cat) {
     '🍝 Plats cuisinés':    'PLAT_PRÉPARÉ_COMPLET',
     '🍚 Féculents':         'FÉCULENT',
     '🍪 Biscuits & snacks': 'SNACK_DESSERT',
-    '🫙 Condiments':        'SAUCE_CONDIMENT',
+    '🪴 Condiments':        'SAUCE_CONDIMENT',
     '🍞 Boulangerie':       'FÉCULENT',
     '📦 Autre':             null,
   };
@@ -90,7 +90,7 @@ function buildStockSummary() {
   return s;
 }
 
-// ─── Appel IA multi-provider ─────────────────
+// ─── Appel IA multi-provider ─────────────
 
 async function _callAI(prompt) {
   if (menuAI === 'anthropic') {
@@ -156,7 +156,7 @@ async function _callAI(prompt) {
   return j.choices?.[0]?.message?.content || '{}';
 }
 
-// ─── Affichage des résultats ─────────────────
+// ─── Affichage des résultats ─────────────
 
 function renderMenuDays(days, warnings, el) {
   if (!days.length) {
@@ -196,7 +196,7 @@ function renderMenuDays(days, warnings, el) {
   }
 }
 
-// ─── Génération via IA ────────────────────────
+// ─── Génération via IA ────────────────────
 
 async function generateMenus() {
   const all = [...appData.fridge, ...appData.freezer, ...appData.pantry];
@@ -226,6 +226,7 @@ async function generateMenus() {
   const numDays   = menuBatch ? 3 : parseInt(menuDays);
   const persons   = menuPersons || '2';
   const menuExtra = document.getElementById('menu-extra').value.trim();
+  const menuInspo = document.getElementById('menu-inspo').value.trim();
 
   const batchSection = menuBatch ? `
 # MODE BATCH COOKING
@@ -235,17 +236,23 @@ async function generateMenus() {
 - Indiquer les quantités à préparer d'avance (ex : "Cuire 400 g de riz pour 3 jours").
 ` : '';
 
-  const prompt = `# RÔLE
-Tu es un chef cuisinier expérimenté spécialisé dans la cuisine du quotidien et la lutte anti-gaspillage. Ta mission : créer des menus réalistes, savoureux et équilibrés à partir du stock disponible, en évitant que des produits soient jetés.
+  const inspoSection = `# INSPIRATION CULINAIRE
+Inspire-toi du style de Cyril Lignac (émission "Tous en cuisine") et de Philippe Etchebest (https://philippe-etchebest.com/recettes-mentor/) : recettes bistronomiques accessibles, techniques précises, cuisine française du quotidien généreuse et savoureuse.${menuInspo ? `\nL'utilisateur souhaite également s'inspirer de : ${menuInspo}` : ''}
+Reflète ce style dans les noms de plats, les associations d'ingrédients et les techniques de cuisson — sans jamais inventer d'ingrédients absents du stock.
 
-# CONTEXTE
+`;
+
+  const prompt = `# RÔLE
+Tu es un chef cuisinier français expérimenté, dans l'esprit de Cyril Lignac ou Philippe Etchebest, spécialisé dans la cuisine du quotidien savoureuse, accessible et anti-gaspillage. Ta mission : créer des menus réalistes, savoureux et équilibrés à partir du stock disponible, en évitant que des produits soient jetés.
+
+${inspoSection}# CONTEXTE
 L'utilisateur gère son stock alimentaire via une application. Tu reçois son inventaire actuel (avec catégorie nutritionnelle de chaque produit) et tu dois générer un menu qui maximise l'usage des produits proches de la péremption, tout en respectant les règles de composition d'un repas équilibré.
 ${menuExtra ? `\n⛔ ALLERGIES / INTERDICTIONS ABSOLUES : ${menuExtra}. Vérifie chaque plat proposé.\n` : ''}
 # CATÉGORIES DE PRODUITS (à comprendre pour bien composer les repas)
 - PROTÉINE : viande, poisson, œufs, légumineuses, tofu.
 - FÉCULENT : pâtes, riz, pommes de terre, pain, semoule.
 - LÉGUME_FRAIS : tomate, courgette, salade, carotte... (compte comme légume du repas).
-- LÉGUMES_ACCOMPAGNEMENT : poêlées surgelées, ratatouille... (compte aussi comme légume).
+- LÉGUMES_ACCOMPAGNEMENT : poêelées surgelées, ratatouille... (compte aussi comme légume).
 - FRUIT : pour dessert ou collation.
 - LAITAGE : yaourt, fromage, lait, beurre, crème.
 - AROMATE : oignon, ail, herbes fraîches, gingembre. NE COMPTE PAS comme légume du repas — sert à parfumer.
@@ -312,7 +319,7 @@ ${batchSection}
 # EXEMPLES DE BONNES SORTIES
 
 Exemple 1 — Repas équilibré classique :
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Poulet poêlé aux tomates et riz","servings":2,"prep_time_minutes":18,"stock_items":["Poulet","Tomates","Riz"],"uses_urgent":true,"steps":["Cuire 160g de riz dans 320ml d'eau salée, 12 min à feu doux.","Couper le poulet en lamelles et faire revenir 6 min à l'huile d'olive.","Ajouter les tomates en quartiers, saler, poivrer, cuire 4 min.","Servir le poulet sur le riz."]}]}],"warnings":[]}
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Poulet poêelé aux tomates et riz","servings":2,"prep_time_minutes":18,"stock_items":["Poulet","Tomates","Riz"],"uses_urgent":true,"steps":["Cuire 160g de riz dans 320ml d'eau salée, 12 min à feu doux.","Couper le poulet en lamelles et faire revenir 6 min à l'huile d'olive.","Ajouter les tomates en quartiers, saler, poivrer, cuire 4 min.","Servir le poulet sur le riz."]}]}],"warnings":[]}
 
 Exemple 2 — Avec plat préparé complet :
 {"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Linguine saumon épinards et salade de tomates","servings":2,"prep_time_minutes":10,"stock_items":["Linguine au saumon épinards sauce citron basilic","Tomates"],"uses_urgent":false,"steps":["Réchauffer le plat de linguine selon les instructions du paquet.","Couper les tomates en quartiers et les assaisonner avec sel, poivre et huile d'olive.","Servir la salade de tomates en accompagnement."]}]}],"warnings":[]}
@@ -342,7 +349,7 @@ Réponds UNIQUEMENT avec le JSON.`;
     if (days.length) {
       const note = document.createElement('div');
       note.style.cssText = 'font-size:0.72rem;color:var(--text-faint);margin-top:12px;padding-top:12px;border-top:1px solid var(--border);';
-      note.textContent = `✦ Menus générés par ${aiLabels[menuAI] || menuAI}`;
+      note.textContent = `❖ Menus générés par ${aiLabels[menuAI] || menuAI}`;
       contentEl.appendChild(note);
     }
   } catch (err) {
@@ -350,7 +357,7 @@ Réponds UNIQUEMENT avec le JSON.`;
   }
 
   btn.disabled = false;
-  btn.innerHTML = '✦ &nbsp;Régénérer';
+  btn.innerHTML = '❖ &nbsp;Régénérer';
 }
 
 // ─── Ouverture / fermeture ────────────────────
@@ -360,7 +367,7 @@ function openMenu() {
   document.getElementById('menu-result').classList.remove('show');
   document.getElementById('menu-result-content').innerHTML = '';
   document.getElementById('btn-generate').disabled = false;
-  document.getElementById('btn-generate').innerHTML = '✦ &nbsp;Générer les menus';
+  document.getElementById('btn-generate').innerHTML = '❖ &nbsp;Générer les menus';
 }
 
 function closeMenu()      { document.getElementById('modal-menu').classList.remove('open'); }
