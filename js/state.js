@@ -37,7 +37,7 @@ const CATEGORIES = [
 // Menu IA — options sélectionnées
 let menuDays  = '1';
 let menuDiet  = 'aucune contrainte';
-let menuPrio  = 'utiliser en priorité les produits qui expirent bientôt';
+let menuPrio  = 'utiliser au maximum ce qui est en stock';
 let menuTime  = 'rapide';
 let menuMeals = new Set(['déjeuner', 'dîner']);
 let menuAI    = 'mistral';
