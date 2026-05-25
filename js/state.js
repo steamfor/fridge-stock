@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────
-// ÉTAT GLOBAL DE L'APPLICATION
+// ÉTAT GLOBAL DE L’APPLICATION
 // ─────────────────────────────────────────────
 
 // Supabase
@@ -32,15 +32,15 @@ const CATEGORIES = [
   '🥩 Viande', '🐟 Poisson', '🥛 Laitier', '🧀 Fromage',
   '🥦 Légumes', '🍎 Fruits', '🍳 Œufs', '🧃 Boissons',
   '🍱 Plat préparé', '🍝 Plats cuisinés', '🍚 Féculents',
-  '🍪 Biscuits & snacks', '🫙 Condiments', '🍞 Boulangerie', '📦 Autre',
+  '🍪 Biscuits & snacks', '🫔 Condiments', '🍞 Boulangerie', '📦 Autre',
 ];
 
 // Menu IA — options sélectionnées
 let menuDays  = '1';
 let menuDiet  = 'aucune contrainte';
-let menuPrio  = 'utiliser en priorité les produits qui expirent bientôt';
+let menuPrio  = 'utiliser au maximum ce qui est en stock';
 let menuTime  = 'rapide';
-let menuMeals = new Set(['déjeuner', 'dîner']);
+let menuMeals = new Set(['éjeuner', 'dîner']);
 let menuAI    = 'mistral';
 let menuBatch = false;
 let menuPersons = '2';

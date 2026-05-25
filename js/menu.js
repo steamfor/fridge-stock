@@ -63,7 +63,7 @@ function _itemPromptCategory(cat) {
     '🍝 Plats cuisinés':    'PLAT_PRÉPARÉ_COMPLET',
     '🍚 Féculents':         'FÉCULENT',
     '🍪 Biscuits & snacks': 'SNACK_DESSERT',
-    '🪴 Condiments':        'SAUCE_CONDIMENT',
+    '🫔 Condiments':        'SAUCE_CONDIMENT',
     '🍞 Boulangerie':       'FÉCULENT',
     '📦 Autre':             null,
   };
@@ -85,7 +85,7 @@ function buildStockSummary() {
   });
   if (!urgent.length && !normal.length) return null;
   let s = '';
-  if (urgent.length) s += `⚠️ URGENT — à utiliser en PRIORITÉ ABSOLUE (expire dans <3 jours) :\n${urgent.join('\n')}\n\n`;
+  if (urgent.length) s += `⚠️ À consommer bientôt (< 3 jours) :\n${urgent.join('\n')}\n\n`;
   if (normal.length) s += `✅ DISPONIBLE :\n${normal.join('\n')}`;
   return s;
 }
@@ -125,7 +125,7 @@ async function _callAI(prompt) {
       body: JSON.stringify({
         model: 'gpt-4o',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
+        temperature: 0.7,
         max_tokens: 4000,
         response_format: { type: 'json_object' },
       }),
@@ -146,7 +146,7 @@ async function _callAI(prompt) {
     body: JSON.stringify({
       model: 'mistral-large-latest',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3,
+      temperature: 0.7,
       max_tokens: 4000,
       response_format: { type: 'json_object' },
     }),
@@ -172,7 +172,6 @@ function renderMenuDays(days, warnings, el) {
           <div class="meal-body">
             <div class="meal-name">
               ${esc(m.dish || '')}
-              ${m.uses_urgent ? '<span class="meal-urgent-badge">⚠️ anti-gaspi</span>' : ''}
             </div>
             ${m.prep_time_minutes ? `<div class="meal-prep-time">⏱ ${m.prep_time_minutes} min</div>` : ''}
             ${(m.stock_items || []).length ? `
@@ -226,7 +225,6 @@ async function generateMenus() {
   const numDays   = menuBatch ? 3 : parseInt(menuDays);
   const persons   = menuPersons || '2';
   const menuExtra = document.getElementById('menu-extra').value.trim();
-  const menuInspo = document.getElementById('menu-inspo').value.trim();
 
   const batchSection = menuBatch ? `
 # MODE BATCH COOKING
@@ -236,17 +234,11 @@ async function generateMenus() {
 - Indiquer les quantités à préparer d'avance (ex : "Cuire 400 g de riz pour 3 jours").
 ` : '';
 
-  const inspoSection = `# INSPIRATION CULINAIRE
-Inspire-toi du style de Cyril Lignac (émission "Tous en cuisine") et de Philippe Etchebest (https://philippe-etchebest.com/recettes-mentor/) : recettes bistronomiques accessibles, techniques précises, cuisine française du quotidien généreuse et savoureuse.${menuInspo ? `\nL'utilisateur souhaite également s'inspirer de : ${menuInspo}` : ''}
-Reflète ce style dans les noms de plats, les associations d'ingrédients et les techniques de cuisson — sans jamais inventer d'ingrédients absents du stock.
-
-`;
-
   const prompt = `# RÔLE
-Tu es un chef cuisinier français expérimenté, dans l'esprit de Cyril Lignac ou Philippe Etchebest, spécialisé dans la cuisine du quotidien savoureuse, accessible et anti-gaspillage. Ta mission : créer des menus réalistes, savoureux et équilibrés à partir du stock disponible, en évitant que des produits soient jetés.
+Tu es un chef cuisinier français expérimenté, spécialisé dans la cuisine du quotidien savoureuse et accessible. Ta mission : créer des menus réalistes, variés et équilibrés à partir du stock disponible.
 
-${inspoSection}# CONTEXTE
-L'utilisateur gère son stock alimentaire via une application. Tu reçois son inventaire actuel (avec catégorie nutritionnelle de chaque produit) et tu dois générer un menu qui maximise l'usage des produits proches de la péremption, tout en respectant les règles de composition d'un repas équilibré.
+# CONTEXTE
+L'utilisateur gère son stock alimentaire via une application. Tu reçois son inventaire actuel (avec catégorie nutritionnelle de chaque produit) et tu dois générer un menu qui respecte les règles de composition d'un repas équilibré.
 ${menuExtra ? `\n⛔ ALLERGIES / INTERDICTIONS ABSOLUES : ${menuExtra}. Vérifie chaque plat proposé.\n` : ''}
 # CATÉGORIES DE PRODUITS (à comprendre pour bien composer les repas)
 - PROTÉINE : viande, poisson, œufs, légumineuses, tofu.
@@ -271,9 +263,8 @@ PRIORITÉ 1 — Sécurité alimentaire :
 - N'utilise QUE les produits listés ci-dessus + les bases autorisées.
 - Si un plat nécessite un ingrédient absent, choisis un AUTRE plat. Aucune substitution implicite.
 
-PRIORITÉ 2 — Anti-gaspillage :
-- Chaque produit URGENT (sauf AROMATE/SAUCE_CONDIMENT) doit apparaître dans au moins un plat.
-- Épuise les produits urgents avant les disponibles quand c'est possible.
+PRIORITÉ 2 — Objectif de l'utilisateur : ${menuPrio}.
+- Si des produits sont marqués "⚠️ À consommer bientôt", intègre-les naturellement quand c'est savoureux — sans forcer des associations peu appétissantes.
 
 PRIORITÉ 3 — Équilibre et composition du repas :
 - Un repas équilibré contient idéalement : 1 PROTÉINE + 1 FÉCULENT + 1 LÉGUME (frais ou accompagnement).
@@ -295,43 +286,43 @@ PRIORITÉ 4 — Paramètres du menu :
 
 PRIORITÉ 5 — Variété :
 - Les repas d'une même journée doivent être DIFFÉRENTS (plats distincts).
-- Sur plusieurs jours, varie féculents et protéines tant que le stock le permet.
+- Sur plusieurs jours, varie féculents, protéines ET modes de cuisson (poêlé, gratiné, mijoté, cru…).
+- Propose des plats originaux avec des noms évocateurs, pas des intitulés génériques.
 ${batchSection}
 # MÉTHODE (raisonne dans cet ordre, en silence)
-1. Identifie les produits urgents → ils DOIVENT être placés.
-2. Pour chaque repas à générer, sélectionne idéalement 1 PROTÉINE + 1 FÉCULENT + 1 LÉGUME.
-3. Si un PLAT_PRÉPARÉ_COMPLET est utilisé, il remplace ces 3 éléments à lui seul.
-4. Vérifie pour chaque plat : temps ≤ ${time.max} min ? Tous les ingrédients sont-ils dans le stock ?
-5. Si un repas ne peut pas être équilibré (composant manquant), ajoute une entrée dans \`warnings\`.
-6. Génère le JSON final.
+1. Détermine l'objectif (PRIORITÉ 2) et règle la créativité en conséquence.
+2. Note les produits à consommer bientôt — intègre-les si c'est naturel et savoureux.
+3. Pour chaque repas, sélectionne 1 PROTÉINE + 1 FÉCULENT + 1 LÉGUME (ou un PLAT_PRÉPARÉ_COMPLET).
+4. Vérifie : temps ≤ ${time.max} min ? Tous les ingrédients dans le stock ?
+5. Si un composant manque, ajoute une entrée dans \`warnings\`.
+6. Gène le JSON final.
 
 # FORMAT DE SORTIE (JSON strict, AUCUN markdown, AUCUN texte avant/après)
 
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat (max 6 mots)","servings":${persons},"prep_time_minutes":15,"stock_items":["nom exact tel qu'écrit dans le stock"],"uses_urgent":true,"steps":["Étape 1 (verbe à l'infinitif).","Étape 2.","Étape 3."]}]}],"warnings":["Aucun féculent disponible — pensez à racheter du pain ou des pâtes."]}
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Nom du plat évocateur","servings":${persons},"prep_time_minutes":15,"stock_items":["nom exact tel qu'écrit dans le stock"],"uses_urgent":false,"steps":["Étape 1 (verbe à l'infinitif).","Étape 2.","Étape 3."]}]}],"warnings":[]}
 
 # RÈGLES DES ÉTAPES
 - 2 à 4 étapes maximum, 1 phrase chacune, à l'infinitif.
 - Concrètes : températures (°C), durées (min), tailles de découpe.
 - Produit congelé → 1ʳᵉ étape = "Sortir [produit] du congélateur." ou décongélation rapide.
-- PLAT_PRÉPARÉ_COMPLET → étapes uniquement de réchauffage ("Réchauffer selon les instructions du paquet.", éventuellement préparation d'un accompagnement frais).
+- PLAT_PRÉPARÉ_COMPLET → étapes uniquement de réchauffage.
 - Dernière étape = service ("Servir chaud", "Dresser dans une assiette").${menuBatch ? '\n- Dernière étape pour chaque plat = conservation frigo + temps de réchauffage.' : ''}
 
 # EXEMPLES DE BONNES SORTIES
 
 Exemple 1 — Repas équilibré classique :
-{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Poulet poêelé aux tomates et riz","servings":2,"prep_time_minutes":18,"stock_items":["Poulet","Tomates","Riz"],"uses_urgent":true,"steps":["Cuire 160g de riz dans 320ml d'eau salée, 12 min à feu doux.","Couper le poulet en lamelles et faire revenir 6 min à l'huile d'olive.","Ajouter les tomates en quartiers, saler, poivrer, cuire 4 min.","Servir le poulet sur le riz."]}]}],"warnings":[]}
+{"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Poulet poêelé aux tomates et riz","servings":2,"prep_time_minutes":18,"stock_items":["Poulet","Tomates","Riz"],"uses_urgent":false,"steps":["Cuire 160g de riz dans 320ml d'eau salée, 12 min à feu doux.","Couper le poulet en lamelles et faire revenir 6 min à l'huile d'olive.","Ajouter les tomates en quartiers, saler, poivrer, cuire 4 min.","Servir le poulet sur le riz."]}]}],"warnings":[]}
 
 Exemple 2 — Avec plat préparé complet :
 {"days":[{"label":"Jour 1","meals":[{"type":"Déjeuner","dish":"Linguine saumon épinards et salade de tomates","servings":2,"prep_time_minutes":10,"stock_items":["Linguine au saumon épinards sauce citron basilic","Tomates"],"uses_urgent":false,"steps":["Réchauffer le plat de linguine selon les instructions du paquet.","Couper les tomates en quartiers et les assaisonner avec sel, poivre et huile d'olive.","Servir la salade de tomates en accompagnement."]}]}],"warnings":[]}
 
 Exemple 3 — Manque de féculent (warning) :
-{"days":[{"label":"Jour 1","meals":[{"type":"Dîner","dish":"Omelette aux tomates","servings":2,"prep_time_minutes":10,"stock_items":["Œufs","Tomates","Oignon"],"uses_urgent":true,"steps":["Émincer l'oignon et le faire suer 3 min à l'huile.","Ajouter les tomates en dés, cuire 2 min.","Battre 4 œufs, verser dans la poêle, cuire 4 min à feu moyen.","Servir chaud."]}]}],"warnings":["Aucun féculent disponible pour ce dîner — pensez à racheter du pain ou des pâtes pour un repas plus complet."]}
+{"days":[{"label":"Jour 1","meals":[{"type":"Dîner","dish":"Omelette provençale aux tomates","servings":2,"prep_time_minutes":10,"stock_items":["Œufs","Tomates","Oignon"],"uses_urgent":false,"steps":["Émincer l'oignon et le faire suer 3 min à l'huile.","Ajouter les tomates en dés, cuire 2 min.","Battre 4 œufs, verser dans la poêle, cuire 4 min à feu moyen.","Servir chaud."]}]}],"warnings":["Aucun féculent disponible pour ce dîner — pensez à racheter du pain ou des pâtes."]}
 
 # VÉRIFICATION FINALE (silencieuse, avant de répondre)
 ☐ Tous les \`stock_items\` existent-ils dans le stock fourni ?
-☐ Chaque produit URGENT (hors aromates) est-il utilisé au moins une fois ?
 ☐ Chaque repas a-t-il une protéine + féculent + légume, OU un plat préparé complet, OU un warning ?
-☐ Les plats préparés complets sont-ils traités sans recette inventée ?
+☐ Les plats sont-ils variés (pas de répétition de plat d'un jour à l'autre) ?
 ☐ Chaque \`prep_time_minutes\` ≤ ${time.max} ?
 ☐ JSON valide, aucun markdown, aucun texte hors JSON ?
 
