@@ -24,7 +24,7 @@ async function saveEdit() {
   const name = document.getElementById('edit-name').value.trim();
   if (!name) { document.getElementById('edit-name').focus(); return; }
 
-  const qty = parseInt(document.getElementById('edit-qty').value) || 1;
+  const qty = parseFloat(document.getElementById('edit-qty').value) || 0.5;
   const cat = document.getElementById('edit-cat').value;
   const exp = document.getElementById('edit-exp').value || null;
 

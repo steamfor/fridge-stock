@@ -68,7 +68,7 @@ function render() {
   // Barre flottante
   const total = appData[currentTab].reduce((s, i) => s + i.qty, 0);
   const warns = appData[currentTab].filter(i => ['warn', 'expired'].includes(expiryStatus(i.exp))).length;
-  document.getElementById('bar-total').textContent = total;
+  document.getElementById('bar-total').textContent = formatQty(total);
   const barWarn = document.getElementById('bar-warn');
   if (warns > 0) {
     barWarn.style.display = '';
@@ -103,10 +103,20 @@ function render() {
   }
 }
 
+function formatQty(qty) {
+  const whole = Math.floor(qty);
+  const half  = (qty * 2) % 2 !== 0;
+  if (whole === 0) return '½';
+  return half ? `${whole}½` : `${whole}`;
+}
+
 function itemHTML(item) {
   const status    = item.exp ? expiryStatus(item.exp) : 'none';
   const statusCls = status === 'none' ? 'no-expiry' : 'status-' + status;
-  const moveTitle  = 'Déplacer…';
+  const isHalf    = (item.qty * 2) % 2 !== 0;
+  const halfBtn   = isHalf
+    ? `<button class="qty-btn finir"   onclick="finirItem('${item.id}')"   title="Finir le paquet entamé">✓</button>`
+    : `<button class="qty-btn entamer" onclick="entamerItem('${item.id}')" title="Paquet entamé — retirer la moitié">½</button>`;
 
   return `
     <div class="item-wrapper" data-id="${item.id}">
@@ -119,11 +129,12 @@ function itemHTML(item) {
             <span class="item-expiry">${expiryLabel(item.exp) || '—'}</span>
           </div>
         </div>
-        <button class="btn-move" onclick="openMove('${item.id}')" title="${moveTitle}">⇄</button>
+        <button class="btn-move" onclick="openMove('${item.id}')" title="Déplacer…">⇄</button>
         <div class="qty-control">
           <button class="qty-btn" onclick="changeQty('${item.id}',-1)">−</button>
-          <span class="qty-val">${item.qty}</span>
+          <span class="qty-val">${formatQty(item.qty)}</span>
           <button class="qty-btn" onclick="changeQty('${item.id}',+1)">＋</button>
+          ${halfBtn}
           <button class="qty-btn delete" onclick="deleteItem('${item.id}')">✕</button>
         </div>
       </div>

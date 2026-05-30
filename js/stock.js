@@ -126,6 +126,9 @@ async function changeQty(id, delta) {
   if (error) { showToast('Erreur : ' + error.message); loadStock(); }
 }
 
+function entamerItem(id) { changeQty(id, -0.5); }
+function finirItem(id)   { changeQty(id, -0.5); }
+
 async function deleteItem(id) {
   appData.fridge  = appData.fridge.filter(i => i.id !== id);
   appData.freezer = appData.freezer.filter(i => i.id !== id);

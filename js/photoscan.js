@@ -27,6 +27,7 @@ function _setCameraMode(active) {
   document.getElementById('btn-photoscan-shutter').style.display     = active ? '' : 'none';
 }
 
+
 function _setPhotoCaptureButtons(disabled, statusText) {
   document.getElementById('btn-photoscan-camera').disabled  = disabled;
   document.getElementById('btn-photoscan-gallery').disabled = disabled;
@@ -98,11 +99,12 @@ function _captureFromVideo() {
 
 // ─── Déclenchement galerie ───────────────────────
 
-function triggerPhotoCapture() {
+function triggerPhotoCapture(useCamera) {
   if (!mistralKey) { showToast('Clé Mistral non configurée.'); return; }
   const input = document.createElement('input');
   input.type   = 'file';
   input.accept = 'image/*';
+  if (useCamera) input.capture = 'environment';
   input.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
