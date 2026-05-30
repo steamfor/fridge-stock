@@ -120,6 +120,10 @@
       <span class="modal-title">▦ &nbsp;Scanner un code-barres</span>
       <button class="btn-close" onclick="closeBarcode()">✕</button>
     </div>
+    <div class="scan-location-toggle" style="margin-top:4px;">
+      <button class="loc-btn active" id="scan-mode-add"    onclick="setScanMode('add')">＋&nbsp;Ajouter</button>
+      <button class="loc-btn"        id="scan-mode-delete" onclick="setScanMode('delete')">✕&nbsp;Supprimer</button>
+    </div>
     <video id="camera-view" autoplay playsinline muted></video>
     <div class="camera-hint">Pointez vers le code-barres — détection automatique</div>
     <div class="scan-indicator" id="scan-indicator">Démarrage…</div>
@@ -148,6 +152,7 @@
         <button class="btn-scan-continue" onclick="addFromScanAndContinue()">Ajouter &amp; continuer ↩</button>
       </div>
     </div>
+    <div id="scan-delete-result" style="display:none;flex-direction:column;gap:8px;margin-top:16px;"></div>
   </div>
 </div>
 
@@ -333,10 +338,12 @@
         <button class="photoscan-loc-btn loc-btn" data-loc="freezer" onclick="setPhotoScanLoc('freezer')">❄️ Congél.</button>
         <button class="photoscan-loc-btn loc-btn active" data-loc="pantry" onclick="setPhotoScanLoc('pantry')">🫙 Placard</button>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="receipt-input-btn" id="btn-photoscan-camera" onclick="triggerPhotoCapture(true)">📷 &nbsp;Appareil photo</button>
-        <button class="receipt-input-btn" id="btn-photoscan-gallery" onclick="triggerPhotoCapture(false)">🖼️ &nbsp;Galerie</button>
+      <div id="photoscan-capture-btns" style="display:flex;gap:8px;">
+        <button class="receipt-input-btn" id="btn-photoscan-camera" onclick="_startCamera()">📷 &nbsp;Appareil photo</button>
+        <button class="receipt-input-btn" id="btn-photoscan-gallery" onclick="triggerPhotoCapture()">🖼️ &nbsp;Galerie</button>
       </div>
+      <video id="photoscan-video" autoplay playsinline muted style="display:none;width:100%;border-radius:var(--radius);object-fit:cover;max-height:260px;border:1px solid var(--border);"></video>
+      <button class="btn-parse" id="btn-photoscan-shutter" style="display:none;" onclick="_captureFromVideo()">📸 &nbsp;Capturer</button>
       <div id="photoscan-status" style="display:none;font-size:0.82rem;color:var(--text-faint);text-align:center;padding:4px 0;"></div>
       <img id="photoscan-thumb" src="" alt="Aperçu" style="display:none;width:100%;border-radius:var(--radius);object-fit:cover;max-height:200px;border:1px solid var(--border);">
       <div id="photoscan-preview-section" style="display:none;">

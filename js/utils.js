@@ -39,16 +39,16 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
-// ─── Expiration ────────────────────────────────
+// ─── Expiration ────────────────────────────
 
-// ─── Debounce ──────────────────────────────────
+// ─── Debounce ──────────────────────────────
 
 function debounce(fn, delay) {
   let timer;
   return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); };
 }
 
-// ─── Sélects de catégories ────────────────────
+// ─── Sélects de catégories ───────────────────
 
 function buildCategorySelect(id) {
   const select = document.getElementById(id);
@@ -77,7 +77,7 @@ function updateThemeButton() {
   btn.title = isLight ? 'Passer en thème sombre' : 'Passer en thème clair';
 }
 
-// ─── Raccourcis date ──────────────────────────
+// ─── Raccourcis date ────────────────────────
 
 function setDateShortcut(inputId, days) {
   const d = new Date();
@@ -89,7 +89,7 @@ function clearDateInput(inputId) {
   document.getElementById(inputId).value = '';
 }
 
-// ─── Expiration ────────────────────────────────
+// ─── Expiration ────────────────────────────
 
 function expiryStatus(d) {
   if (!d) return 'none';
@@ -109,4 +109,87 @@ function expiryLabel(d) {
   if (diff === 1) return 'Expire demain';
   if (diff <= 7)  return 'Dans ' + diff + 'j';
   return new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+// ─── Resize image avant envoi à l'IA ─────────────
+
+function _resizeImageToBase64(file, maxPx = 800, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale  = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+// ─── Mistral Vision (Pixtral) ────────────────────
+
+async function _callMistralVision(base64, mimeType, promptText) {
+  const r = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + mistralKey,
+    },
+    body: JSON.stringify({
+      model: 'pixtral-12b-2409',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'text', text: promptText },
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
+        ],
+      }],
+      temperature: 0.1,
+      max_tokens: 2000,
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j?.message || r.statusText);
+  return j.choices?.[0]?.message?.content || '';
+}
+
+function _parseAIFoodItems(rawText) {
+  const cleaned = String(rawText).replace(/```json|```/g, '').trim();
+  const json    = cleaned.match(/\{[\s\S]*\}/)?.[0];
+  if (!json) throw new Error("Réponse inattendue de l'IA");
+  return (JSON.parse(json).items || [])
+    .map(i => {
+      const name = String(i.name || '').trim();
+      const cat  = CATEGORIES.includes(i.cat) ? i.cat : guessCategoryFromName(name);
+      return { name, qty: Math.max(1, parseInt(i.qty) || 1), cat };
+    })
+    .filter(i => i.name);
+}
+
+function _renderFoodItemRows(items, arrayName, removeFn) {
+  return items.map((item, i) => `
+    <div class="receipt-item-row">
+      <input type="text" class="receipt-item-name" value="${esc(item.name)}"
+        onchange="${arrayName}[${i}].name = this.value.trim()"
+        placeholder="Nom du produit">
+      <input type="number" class="receipt-item-qty" value="${item.qty}" min="1" max="99"
+        onchange="${arrayName}[${i}].qty = Math.max(1, parseInt(this.value) || 1)">
+      <select class="receipt-item-cat" onchange="${arrayName}[${i}].cat = this.value">
+        <option value="">📦 Autre</option>
+        ${CATEGORIES.filter(c => c !== '📦 Autre').map(c =>
+          `<option value="${c}"${item.cat === c ? ' selected' : ''}>${esc(c)}</option>`
+        ).join('')}
+      </select>
+      <button class="receipt-item-del" onclick="${removeFn}(${i})" title="Supprimer">✕</button>
+    </div>`).join('');
 }
