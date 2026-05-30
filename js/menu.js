@@ -79,7 +79,7 @@ function buildStockSummary() {
     appData[loc].forEach(i => {
       const cat = _itemPromptCategory(i.cat);
       const catStr = cat ? ` — ${cat}` : '';
-      const entry = `- ${i.name} : x${i.qty} [${locLabel[loc]}]${catStr}`;
+      const entry = `- ${i.name} : x${formatQty(i.qty)} [${locLabel[loc]}]${catStr}`;
       (['warn', 'expired'].includes(expiryStatus(i.exp)) ? urgent : normal).push(entry);
     });
   });
