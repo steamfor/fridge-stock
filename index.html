@@ -66,6 +66,7 @@
     <button class="btn-quick btn-menu"    onclick="openMenu()">❆ &nbsp;Proposer des menus</button>
     <button class="btn-quick btn-consume" onclick="openConsume()">🍽 &nbsp;J'utilise…</button>
     <button class="btn-quick btn-receipt" onclick="openReceipt()">📄 &nbsp;Ticket de caisse</button>
+    <button class="btn-quick btn-voice"   onclick="openVoice()">🎙 &nbsp;Vocal IA</button>
     <button class="btn-quick btn-photoscan" onclick="openPhotoScan()" style="flex-basis:100%;">📸 &nbsp;Scanner un placard / frigo</button>
   </div>
 
@@ -111,6 +112,20 @@
   <div class="floating-bar">
     <span class="lbl">Total</span> <strong id="bar-total">0</strong>
     <span id="bar-warn" style="display:none"><span class="dot"></span><strong id="bar-warn-count">0</strong> <span class="lbl">expire bientôt</span></span>
+  </div>
+</div>
+
+<!-- ═══ MODAL : ASSISTANT VOCAL ═══ -->
+<div class="modal-overlay" id="modal-voice" onclick="closeVoiceOnBg(event)">
+  <div class="modal" style="text-align:center;">
+    <div class="modal-header">
+      <span class="modal-title">🎙 &nbsp;Assistant vocal</span>
+      <button class="btn-close" onclick="closeVoice()">✕</button>
+    </div>
+    <div id="voice-indicator" class="voice-indicator">Appuyez sur le micro</div>
+    <button id="voice-mic-btn" class="voice-mic-btn" onclick="startListening()">🎙</button>
+    <div id="voice-transcript" class="voice-transcript"></div>
+    <div id="voice-response"   class="voice-response"></div>
   </div>
 </div>
 
@@ -406,6 +421,7 @@
 <script src="js/receipt.js"></script>
 <script src="js/photoscan.js"></script>
 <script src="js/consume.js"></script>
+<script src="js/voice.js"></script>
 <script src="js/app.js"></script>
 
 </body>
