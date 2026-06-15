@@ -411,8 +411,23 @@ select option { background: #0d1e38; color: var(--text); }
 /* ─────────────────────────────────────────────
    TICKET DE CAISSE
 ───────────────────────────────────────────── */
+.btn-consume { background: linear-gradient(135deg, rgba(74,222,128,0.1), rgba(0,214,143,0.05)); color: #4ade80; border-color: rgba(74,222,128,0.22); }
+.btn-consume:hover { background: linear-gradient(135deg, rgba(74,222,128,0.18), rgba(0,214,143,0.1)); border-color: rgba(74,222,128,0.42); }
+
 .btn-receipt { background: linear-gradient(135deg, rgba(255,181,71,0.1), rgba(255,140,50,0.05)); color: var(--warn); border-color: rgba(255,181,71,0.22); }
 .btn-receipt:hover { background: linear-gradient(135deg, rgba(255,181,71,0.18), rgba(255,140,50,0.1)); border-color: rgba(255,181,71,0.42); }
+
+/* ─────────────────────────────────────────────
+   MODE CONSOMMATION RAPIDE
+───────────────────────────────────────────── */
+.consume-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; font-family: var(--font); text-align: left; }
+.consume-item:hover  { background: var(--bg-card-hv); border-color: var(--border-hv); }
+.consume-item:active { transform: scale(0.98); }
+.consume-loc  { font-size: 1rem; flex-shrink: 0; }
+.consume-name { flex: 1; font-size: 0.92rem; font-weight: 600; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.consume-qty  { font-family: var(--mono); font-size: 0.78rem; color: var(--text-faint); flex-shrink: 0; }
+.consume-minus { font-size: 0.7rem; font-family: var(--mono); font-weight: 700; color: var(--expired); background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.2); border-radius: 99px; padding: 2px 8px; flex-shrink: 0; }
+.consume-empty { text-align: center; color: var(--text-faint); font-size: 0.85rem; padding: 28px; }
 
 .receipt-textarea { width: 100%; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-family: var(--mono); font-size: 0.72rem; color: var(--text); outline: none; resize: vertical; line-height: 1.6; transition: border 0.2s; display: block; }
 .receipt-textarea:focus { border-color: rgba(59,158,255,0.5); box-shadow: 0 0 0 3px rgba(59,158,255,0.08); }
